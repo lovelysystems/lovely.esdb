@@ -2,38 +2,7 @@ import inspect
 
 import elasticsearch.exceptions
 
-from lovely.esdb.connection import get_es
-
-
-class Property(object):
-    """A property to access data of a document
-
-    Properties are use in Documents to provide access to the ES properties.
-    """
-
-    name = None  # outer property name
-
-    def __init__(self,
-                 name=None,
-                 default=None,
-                 primary_key=False
-                ):
-        self.name = name
-        self.default = default
-        self.primary_key = primary_key
-
-    def __get__(self, obj, cls=None):
-        if obj is None:
-            return self
-        return obj._source.get(self.name, self.default)
-
-    def __set__(self, obj, value):
-        obj._source[self.name] = value
-        if self.primary_key:
-            obj._meta['_id'] = value
-
-    def __delete__(self, obj):
-        del obj._source[self.name]
+from .property import Property
 
 
 DocumentRegistry = {}
@@ -65,6 +34,8 @@ class Document(object):
     """
 
     __metaclass__ = DocumentMeta
+
+    ES = None
 
     INDEX = None
     DOC_TYPE = 'default'
@@ -104,7 +75,7 @@ class Document(object):
     def index(self, **index_args):
         """Write the current object to elasticsearch
         """
-        return get_es().index(
+        return self._get_es().index(
                     index=self._meta['_index'],
                     doc_type=self._meta['_type'],
                     id=self._meta['_id'],
@@ -134,7 +105,7 @@ class Document(object):
             "doc": update_values,
             "upsert": self._source
         }
-        return get_es().update(
+        return self._get_es().update(
                     index=self._meta['_index'],
                     doc_type=self._meta['_type'],
                     id=self._meta['_id'],
@@ -145,10 +116,10 @@ class Document(object):
     @classmethod
     def get(cls, id):
         try:
-            res = get_es().get(index=cls.INDEX,
-                               doc_type=cls.DOC_TYPE,
-                               id=id,
-                              )
+            res = cls._get_es().get(index=cls.INDEX,
+                                    doc_type=cls.DOC_TYPE,
+                                    id=id,
+                                   )
         except elasticsearch.exceptions.ElasticsearchException:
             return None
         return cls().from_raw_es_data(res)
@@ -157,18 +128,18 @@ class Document(object):
     def mget(cls, ids):
         if not ids:
             return []
-        docs = get_es().mget(index=cls.INDEX,
-                             doc_type=cls.DOC_TYPE,
-                             body={'ids': ids},
-                            ).get('docs')
+        docs = cls._get_es().mget(index=cls.INDEX,
+                                  doc_type=cls.DOC_TYPE,
+                                  body={'ids': ids},
+                                 ).get('docs')
         return [d['found'] and cls().from_raw_es_data(d) or None for d in docs]
 
     @classmethod
     def search(cls, body):
-        docs = get_es().search(index=cls.INDEX,
-                               doc_type=cls.DOC_TYPE,
-                               body=body
-                              )
+        docs = cls._get_es().search(index=cls.INDEX,
+                                    doc_type=cls.DOC_TYPE,
+                                    body=body
+                                   )
         return [
             (cls().from_raw_es_data(d), d['_score'])
             for d in docs['hits']['hits']
@@ -197,3 +168,9 @@ class Document(object):
             return isinstance(obj, Property)
         for prop in inspect.getmembers(self.__class__, isProperty):
             yield prop
+
+    @classmethod
+    def _get_es(cls):
+        if cls.ES is None:
+            raise ValueError('No ES client is set on class %s' % cls.__name__)
+        return cls.ES
