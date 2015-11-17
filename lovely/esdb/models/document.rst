@@ -1,0 +1,171 @@
+=======================
+Elasticsearch Documents
+=======================
+
+Implement A Document
+====================
+
+Implement a document class::
+
+    >>> from lovely.esdb.models.document import Document, Property
+
+    >>> class MyDocument(Document):
+    ...
+    ...     INDEX = 'mydocument'
+    ...
+    ...     id = Property(primary_key=True)
+    ...     title = Property(default=u'')
+    ...     name = Property(default=u'')
+
+    >>> get_es().indices.create(
+    ...     index=MyDocument.INDEX,
+    ...     body={
+    ...         'settings': {'number_of_shards': 1},
+    ...         "mappings" : {
+    ...             "default" : {
+    ...                 "properties" : {
+    ...                     "id" : { "type" : "string", "index" : "not_analyzed" },
+    ...                     "title" : { "type" : "string", "index" : "analyzed" },
+    ...                     "name" : { "type" : "string", "index" : "not_analyzed" },
+    ...                 }
+    ...             }
+    ...         }
+    ...     })
+    {u'acknowledged': True}
+
+    >>> doc = MyDocument()
+    >>> doc.id is None
+    True
+    >>> doc.title
+    u''
+
+Internal data::
+
+    >>> doc._source
+    {'title': u'', 'id': None, 'name': u''}
+    >>> doc._meta
+    {'_type': 'default', '_id': None, '_version': None, '_index': 'mydocument'}
+    >>> doc._update_properties
+    ['title', 'id', 'name']
+
+    >>> doc.id = '1'
+    >>> doc._meta
+    {'_type': 'default', '_id': '1', '_version': None, '_index': 'mydocument'}
+
+
+Save A Document
+===============
+
+To save a document use the "index" method::
+
+    >>> doc.index()
+    {u'_type': u'default', u'_id': u'1', u'created': True, u'_version': 1, u'_index': u'mydocument'}
+
+
+Get A Document From Elasticsearch
+=================================
+
+Get the document::
+
+    >>> myDoc = MyDocument.get(doc.id)
+    >>> myDoc._source
+    {'title': u'', 'id': u'1', 'name': u''}
+    >>> myDoc._meta
+    {'_type': 'default', '_id': u'1', '_version': 1, '_index': 'mydocument'}
+
+
+Get multiple documents from elasticsearch
+=========================================
+
+Get a list of documents::
+
+    >>> doc2 = MyDocument(id="A", title="A title", name="A Name")
+    >>> _ = doc2.index()
+    >>> MyDocument.mget(['1', 'A'])
+    [<MyDocument object at 0x...>, <MyDocument object at 0x...>]
+
+If one document is not found, ``None`` is returned at that index::
+
+    >>> MyDocument.mget(['1', 'A', '3'])
+    [<MyDocument object at 0x...>, <MyDocument object at 0x...>, None]
+
+    >>> MyDocument.mget([])
+    []
+
+    >>> MyDocument.mget(None)
+    []
+
+
+Update A Document
+=================
+
+Update instead of "index" a document allows to only update specific
+properties::
+
+    >>> myDoc.title = u'title'
+    >>> myDoc.name = u'name'
+    >>> myDoc.update(['title'])
+    {u'_type': u'default', u'_id': u'1', u'_version': 2, u'_index': u'mydocument'}
+
+Only the title was changed in the database::
+
+    >>> myDoc = MyDocument.get(doc.id)
+    >>> myDoc._source
+    {'title': u'title', 'id': u'1', 'name': u''}
+
+
+Updating A Not Existing Document
+================================
+
+Create a new document and provide all parameters in the contructor::
+
+    >>> doc1 = MyDocument(id='2', title='title 2', name='name 2')
+
+Update the document::
+
+    >>> doc1.update(['name'])
+    {u'_type': u'default', u'_id': u'2', u'_version': 1, u'_index': u'mydocument'}
+
+Because the document is a new document it is fully written to elasticsearch::
+
+    >>> myDoc = MyDocument.get(doc1.id)
+    >>> myDoc._source
+    {'title': u'title 2', 'id': u'2', 'name': u'name 2'}
+
+
+Search
+======
+
+Refresh index and do a search query::
+
+    >>> _ = get_es().indices.refresh(index="mydocument")
+    >>> body = {
+    ...     "query": {
+    ...         "match": {
+    ...             "title": "title 2"
+    ...         }
+    ...     }
+    ... }
+    >>> docs = MyDocument.search(body)
+
+A tuple with the object and the search score is returned::
+
+    >>> docs
+    [(<MyDocument object at 0x...>, 1...)]
+    >>> print docs[0][0].title
+    title 2
+
+Empty list is returned if nothing is found::
+
+    >>> body['query']['match']['title'] = 'xxxx'
+    >>> MyDocument.search(body)
+    []
+
+
+Clean Up
+========
+
+Delete the index used in this test::
+
+    >>> get_es().indices.delete(index=MyDocument.INDEX)
+    {u'acknowledged': True}

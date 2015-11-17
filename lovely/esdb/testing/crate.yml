@@ -1,0 +1,15 @@
+es:
+    api:
+        enabled: true
+http:
+    cors:
+        enabled: true
+        allow-origin: "/.*/"
+discovery:
+    type: zen
+    zen:
+        ping:
+            multicast:
+                enabled:  false
+cluster:
+    name: lovely-esdb-testing
