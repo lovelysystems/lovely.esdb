@@ -4,7 +4,7 @@ import doctest
 import requests
 
 from crate.testing.layer import CrateLayer
-from lovely.esdb.connection import get_es
+from elasticsearch import Elasticsearch
 
 here = os.path.dirname(__file__)
 buildout_dir = os.path.dirname(os.path.dirname(here))
@@ -38,8 +38,7 @@ crate_layer = CrateLayer('crate',
 
 def setUp(test):
     delete_crate_indexes()
-    test.globs['es_hosts'] = ['localhost:%s' % crate_port]
-    test.globs['get_es'] = get_es
+    test.globs['es_client'] = Elasticsearch(['localhost:%s' % crate_port])
     wait_for_cluster()
 
 
@@ -86,6 +85,5 @@ def create_suite(testfile,
 
 def test_suite():
     return unittest.TestSuite((
-        create_suite('connection/es.rst'),  # this must be first test suite
-        create_suite('models/document.rst'),
+        create_suite('document/document.rst'),
     ))

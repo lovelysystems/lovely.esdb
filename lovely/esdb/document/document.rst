@@ -7,17 +7,19 @@ Implement A Document
 
 Implement a document class::
 
-    >>> from lovely.esdb.models.document import Document, Property
+    >>> from lovely.esdb.document import Document, Property
 
     >>> class MyDocument(Document):
     ...
     ...     INDEX = 'mydocument'
     ...
+    ...     ES = es_client
+    ...
     ...     id = Property(primary_key=True)
     ...     title = Property(default=u'')
     ...     name = Property(default=u'')
 
-    >>> get_es().indices.create(
+    >>> es_client.indices.create(
     ...     index=MyDocument.INDEX,
     ...     body={
     ...         'settings': {'number_of_shards': 1},
@@ -138,7 +140,7 @@ Search
 
 Refresh index and do a search query::
 
-    >>> _ = get_es().indices.refresh(index="mydocument")
+    >>> _ = es_client.indices.refresh(index="mydocument")
     >>> body = {
     ...     "query": {
     ...         "match": {
@@ -162,10 +164,36 @@ Empty list is returned if nothing is found::
     []
 
 
+ES Client property
+==================
+
+The ES property on the Document class must be set, otherwise it's not possible
+to fetch or store objects::
+
+    >>> class ClientLessDocument(Document):
+    ...
+    ...     INDEX = 'clientlessdocument'
+    ...
+    ...     id = Property(primary_key=True)
+
+Works on instance methods::
+
+    >>> cld = ClientLessDocument(id='1')
+    >>> cld.index()
+    Traceback (most recent call last):
+    ValueError: No ES client is set on class ClientLessDocument
+
+And class methods::
+
+    >>> ClientLessDocument.get('2')
+    Traceback (most recent call last):
+    ValueError: No ES client is set on class ClientLessDocument
+
+
 Clean Up
 ========
 
 Delete the index used in this test::
 
-    >>> get_es().indices.delete(index=MyDocument.INDEX)
+    >>> es_client.indices.delete(index=MyDocument.INDEX)
     {u'acknowledged': True}
