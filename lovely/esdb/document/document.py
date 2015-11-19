@@ -93,14 +93,15 @@ class Document(object):
         """
         update_values = {}
 
-        def apply_property(name):
+        def apply_property(name, prop):
             value = getattr(self, name)
             if value is not None:
-                update_values[name] = value
+                update_values[prop.name] = value
         if properties is None:
             properties = self._update_properties
-        for name in properties:
-            apply_property(name)
+        for (name, prop) in self._properties():
+            if name in properties:
+                apply_property(name, prop)
         body = {
             "doc": update_values,
             "upsert": self._source
@@ -147,7 +148,7 @@ class Document(object):
 
     def _prepare_source(self, **kwargs):
         for (name, prop) in self._properties():
-            self._source[prop.name] = kwargs.get(name) or prop.default()
+            self._source[prop.name] = kwargs.get(prop.name) or prop.default()
             if prop.primary_key:
                 self._meta['_id'] = self._source[prop.name]
 
