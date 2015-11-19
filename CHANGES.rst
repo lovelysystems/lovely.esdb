@@ -5,6 +5,9 @@ Changes for lovely.esdb
 unreleased
 ==========
 
+2015/11/19 0.0.3
+================
+
  - fix handling of different name of properties in the database and in the
    document
 
