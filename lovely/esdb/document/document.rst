@@ -23,6 +23,7 @@ Implement a document class::
     ...     id = Property(primary_key=True, default=get_my_id)
     ...     title = Property(default=u'')
     ...     name = Property(default=u'')
+    ...     password = Property(name="pw")
 
     >>> es_client.indices.create(
     ...     index=MyDocument.INDEX,
@@ -34,6 +35,7 @@ Implement a document class::
     ...                     "id" : { "type" : "string", "index" : "not_analyzed" },
     ...                     "title" : { "type" : "string", "index" : "analyzed" },
     ...                     "name" : { "type" : "string", "index" : "not_analyzed" },
+    ...                     "pw" : { "type" : "string", "index" : "not_analyzed" },
     ...                 }
     ...             }
     ...         }
@@ -49,11 +51,11 @@ Implement a document class::
 Internal data::
 
     >>> doc._source
-    {'title': u'', 'id': u'1', 'name': u''}
+    {'pw': None, 'title': u'', 'id': u'1', 'name': u''}
     >>> doc._meta
     {'_type': 'default', '_id': u'1', '_version': None, '_index': 'mydocument'}
     >>> doc._update_properties
-    ['title', 'id', 'name']
+    ['pw', 'title', 'id', 'name']
 
 
 Save A Document
@@ -72,7 +74,7 @@ Get the document::
 
     >>> myDoc = MyDocument.get(doc.id)
     >>> myDoc._source
-    {'title': u'', 'id': u'1', 'name': u''}
+    {'pw': None, 'title': u'', 'id': u'1', 'name': u''}
     >>> myDoc._meta
     {'_type': 'default', '_id': u'1', '_version': 1, '_index': 'mydocument'}
 
@@ -107,14 +109,15 @@ properties::
 
     >>> myDoc.title = u'title'
     >>> myDoc.name = u'name'
-    >>> myDoc.update(['title'])
+    >>> myDoc.password = u'secret'
+    >>> myDoc.update(['title', 'password'])
     {u'_type': u'default', u'_id': u'1', u'_version': 2, u'_index': u'mydocument'}
 
 Only the title was changed in the database::
 
     >>> myDoc = MyDocument.get(doc.id)
     >>> myDoc._source
-    {'title': u'title', 'id': u'1', 'name': u''}
+    {'pw': u'secret', 'title': u'title', 'id': u'1', 'name': u''}
 
 
 Updating A Not Existing Document
@@ -133,7 +136,7 @@ Because the document is a new document it is fully written to elasticsearch::
 
     >>> myDoc = MyDocument.get(doc1.id)
     >>> myDoc._source
-    {'title': u'title 2', 'id': u'newdoc', 'name': u'name 2'}
+    {'pw': None, 'title': u'title 2', 'id': u'newdoc', 'name': u'name 2'}
 
 
 Search
