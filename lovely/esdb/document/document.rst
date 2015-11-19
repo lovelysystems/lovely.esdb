@@ -9,13 +9,18 @@ Implement a document class::
 
     >>> from lovely.esdb.document import Document, Property
 
+    >>> currentId = 0
+    >>> def get_my_id():
+    ...     global currentId
+    ...     currentId += 1
+    ...     return unicode(currentId)
     >>> class MyDocument(Document):
     ...
     ...     INDEX = 'mydocument'
     ...
     ...     ES = es_client
     ...
-    ...     id = Property(primary_key=True)
+    ...     id = Property(primary_key=True, default=get_my_id)
     ...     title = Property(default=u'')
     ...     name = Property(default=u'')
 
@@ -36,23 +41,19 @@ Implement a document class::
     {u'acknowledged': True}
 
     >>> doc = MyDocument()
-    >>> doc.id is None
-    True
+    >>> doc.id
+    u'1'
     >>> doc.title
     u''
 
 Internal data::
 
     >>> doc._source
-    {'title': u'', 'id': None, 'name': u''}
+    {'title': u'', 'id': u'1', 'name': u''}
     >>> doc._meta
-    {'_type': 'default', '_id': None, '_version': None, '_index': 'mydocument'}
+    {'_type': 'default', '_id': u'1', '_version': None, '_index': 'mydocument'}
     >>> doc._update_properties
     ['title', 'id', 'name']
-
-    >>> doc.id = '1'
-    >>> doc._meta
-    {'_type': 'default', '_id': '1', '_version': None, '_index': 'mydocument'}
 
 
 Save A Document
@@ -81,14 +82,14 @@ Get multiple documents from elasticsearch
 
 Get a list of documents::
 
-    >>> doc2 = MyDocument(id="A", title="A title", name="A Name")
+    >>> doc2 = MyDocument(title="A title", name="A Name")
     >>> _ = doc2.index()
-    >>> MyDocument.mget(['1', 'A'])
+    >>> MyDocument.mget(['1', doc2.id])
     [<MyDocument object at 0x...>, <MyDocument object at 0x...>]
 
 If one document is not found, ``None`` is returned at that index::
 
-    >>> MyDocument.mget(['1', 'A', '3'])
+    >>> MyDocument.mget(['1', doc2.id, 'unknown'])
     [<MyDocument object at 0x...>, <MyDocument object at 0x...>, None]
 
     >>> MyDocument.mget([])
@@ -121,18 +122,18 @@ Updating A Not Existing Document
 
 Create a new document and provide all parameters in the contructor::
 
-    >>> doc1 = MyDocument(id='2', title='title 2', name='name 2')
+    >>> doc1 = MyDocument(id='newdoc', title='title 2', name='name 2')
 
 Update the document::
 
     >>> doc1.update(['name'])
-    {u'_type': u'default', u'_id': u'2', u'_version': 1, u'_index': u'mydocument'}
+    {u'_type': u'default', u'_id': u'newdoc', u'_version': 1, u'_index': u'mydocument'}
 
 Because the document is a new document it is fully written to elasticsearch::
 
     >>> myDoc = MyDocument.get(doc1.id)
     >>> myDoc._source
-    {'title': u'title 2', 'id': u'2', 'name': u'name 2'}
+    {'title': u'title 2', 'id': u'newdoc', 'name': u'name 2'}
 
 
 Search

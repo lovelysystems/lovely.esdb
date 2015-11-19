@@ -12,7 +12,12 @@ class Property(object):
                  primary_key=False
                 ):
         self.name = name
-        self.default = default
+        if hasattr(default, '__call__'):
+            self.default = default
+        else:
+            def getDefault():
+                return default
+            self.default = getDefault
         self.primary_key = primary_key
 
     def __get__(self, obj, cls=None):
