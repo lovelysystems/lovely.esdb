@@ -148,7 +148,10 @@ class Document(object):
 
     def _prepare_source(self, **kwargs):
         for (name, prop) in self._properties():
-            self._source[prop.name] = kwargs.get(prop.name) or prop.default()
+            if prop.name in kwargs:
+                self._source[prop.name] = kwargs[prop.name]
+            else:
+                self._source[prop.name] = prop.default()
             if prop.primary_key:
                 self._meta['_id'] = self._source[prop.name]
 

@@ -5,6 +5,8 @@ Changes for lovely.esdb
 unreleased
 ==========
 
+ - fix handling of default values when preparing the source
+
 2015/11/19 0.0.3
 ================
 
