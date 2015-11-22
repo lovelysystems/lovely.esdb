@@ -146,6 +146,22 @@ class Document(object):
             for d in docs['hits']['hits']
         ]
 
+    @classmethod
+    def count(cls, body=None, **count_args):
+        res = cls._get_es().count(
+            index=cls.INDEX,
+            doc_type=cls.DOC_TYPE,
+            body=body,
+            **count_args
+        )
+        return res['count']
+
+    @classmethod
+    def refresh(cls, **refresh_args):
+        """Refresh the index for this document
+        """
+        return cls._get_es().indices.refresh(index=cls.INDEX, **refresh_args)
+
     def _prepare_source(self, **kwargs):
         for (name, prop) in self._properties():
             if prop.name in kwargs:

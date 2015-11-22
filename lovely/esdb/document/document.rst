@@ -22,8 +22,18 @@ Implement a document class::
     ...
     ...     id = Property(primary_key=True, default=get_my_id)
     ...     title = Property(default=u'')
-    ...     name = Property(default=u'')
+    ...     name = Property(
+    ...         default=u'',
+    ...         doc="""
+    ...         Add any documentation string to a property.
+    ...         """
+    ...         )
     ...     password = Property(name="pw")
+
+    >>> MyDocument.name.doc
+    '\n        Add any documentation string to a property.\n        '
+    >>> MyDocument.title.doc
+    u''
 
     >>> es_client.indices.create(
     ...     index=MyDocument.INDEX,
@@ -101,6 +111,25 @@ If one document is not found, ``None`` is returned at that index::
     []
 
 
+Count Documents
+===============
+
+First refresh the index to be able the query can find the newly created
+documents::
+
+    >>> _ = MyDocument.refresh()
+
+Count all documents::
+
+    >>> MyDocument.count()
+    2
+
+Count with a query::
+
+    >>> MyDocument.count({"query": {"term": {"title": "A title"}}})
+    1
+
+
 Update A Document
 =================
 
@@ -144,7 +173,7 @@ Search
 
 Refresh index and do a search query::
 
-    >>> _ = es_client.indices.refresh(index="mydocument")
+    >>> _ = MyDocument.refresh()
     >>> body = {
     ...     "query": {
     ...         "match": {

@@ -5,6 +5,12 @@ Changes for lovely.esdb
 unreleased
 ==========
 
+ - added more functionallity to the Document class:
+   - count
+   - refresh
+
+ - added a doc property to "Property"
+
 2015/11/20 0.0.4
 ================
 

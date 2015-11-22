@@ -9,9 +9,11 @@ class Property(object):
     def __init__(self,
                  name=None,
                  default=None,
-                 primary_key=False
+                 primary_key=False,
+                 doc=u''
                 ):
         self.name = name
+        self.doc = doc
         if hasattr(default, '__call__'):
             self.default = default
         else:
