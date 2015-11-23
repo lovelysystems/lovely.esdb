@@ -197,6 +197,32 @@ Empty list is returned if nothing is found::
     []
 
 
+Delete
+======
+
+Documents can be deleted::
+
+    >>> doc = MyDocument()
+    >>> _ = doc.index()
+    >>> MyDocument.get(doc.id) is not None
+    True
+    >>> doc.delete(refresh=True)
+    {u'found': True, u'_type': u'default', u'_id': u'...', u'_version': 2, u'_index': u'mydocument'}
+    >>> MyDocument.get(doc.id) is None
+    True
+
+Deleteing an already deleted document raises an exception::
+
+    >>> doc.delete(refresh=True)
+    Traceback (most recent call last):
+    NotFoundError: TransportError(404, u'{"found":false,"_index":"mydocument","_type":"default","_id":"...","_version":3}')
+
+The exception can be avoided by using the ignore parameter::
+
+    >>> doc.delete(refresh=True, ignore=[404])
+    {u'found': False, u'_type': u'default', u'_id': u'...', u'_version': 4, u'_index': u'mydocument'}
+
+
 ES Client property
 ==================
 

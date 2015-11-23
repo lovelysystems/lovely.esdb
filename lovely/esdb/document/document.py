@@ -114,6 +114,14 @@ class Document(object):
                     **update_args
                 )
 
+    def delete(self, **delete_args):
+        return self._get_es().delete(
+                    index=self._meta['_index'],
+                    doc_type=self._meta['_type'],
+                    id=self._meta['_id'],
+                    **delete_args
+                )
+
     @classmethod
     def get(cls, id):
         try:
