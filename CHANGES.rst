@@ -5,6 +5,9 @@ Changes for lovely.esdb
 unreleased
 ==========
 
+2015/11/23 0.0.6
+================
+
  - added delete method for documents
 
 2015/11/22 0.0.5
