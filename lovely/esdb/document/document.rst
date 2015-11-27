@@ -80,6 +80,8 @@ To save a document use the "index" method::
 Get A Document From Elasticsearch
 =================================
 
+    >>> prevId = currentId
+
 Get the document::
 
     >>> myDoc = MyDocument.get(doc.id)
@@ -88,16 +90,29 @@ Get the document::
     >>> myDoc._meta
     {'_type': 'default', '_id': u'1', '_version': 1, '_index': 'mydocument'}
 
+A get must not call the default() method for given properties::
+
+    >>> currentId == prevId
+    True
 
 Get multiple documents from elasticsearch
 =========================================
 
-Get a list of documents::
+Create another document::
 
     >>> doc2 = MyDocument(title="A title", name="A Name")
     >>> _ = doc2.index()
+    >>> prevId = currentId
+
+Get a list of documents::
+
     >>> MyDocument.mget(['1', doc2.id])
     [<MyDocument object at 0x...>, <MyDocument object at 0x...>]
+
+A mget must not call the default() method for given properties::
+
+    >>> currentId == prevId
+    True
 
 If one document is not found, ``None`` is returned at that index::
 
@@ -181,6 +196,8 @@ Refresh index and do a search query::
     ...         }
     ...     }
     ... }
+    >>> prevId = currentId
+
     >>> docs = MyDocument.search(body)
 
 A tuple with the object and the search score is returned::
@@ -195,6 +212,11 @@ Empty list is returned if nothing is found::
     >>> body['query']['match']['title'] = 'xxxx'
     >>> MyDocument.search(body)
     []
+
+A search must not call the default() method for given properties::
+
+    >>> currentId == prevId
+    True
 
 
 Delete
