@@ -25,7 +25,10 @@ class Property(object):
     def __get__(self, obj, cls=None):
         if obj is None:
             return self
-        return obj._source.get(self.name, self.default())
+        if self.name in obj._source:
+            return obj._source[self.name]
+        else:
+            return self.default()
 
     def __set__(self, obj, value):
         obj._source[self.name] = value

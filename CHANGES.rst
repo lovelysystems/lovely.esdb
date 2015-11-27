@@ -5,6 +5,8 @@ Changes for lovely.esdb
 unreleased
 ==========
 
+ - do not initially call default() property methods on reading operations
+ 
 2015/11/23 0.0.6
 ================
 

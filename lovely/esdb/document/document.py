@@ -62,15 +62,16 @@ class Document(object):
             # app property attributes
             self._update_properties = self._source.keys()
 
-    def from_raw_es_data(self, raw):
+    @classmethod
+    def from_raw_es_data(cls, raw):
         """Setup the document from raw elasticsearch data
 
         raw must contain the data returned from ES which contains the
         "_source" property.
         """
-        self._prepare_source(**raw['_source'])
-        self._update_meta(raw['_id'], raw.get('_version'))
-        return self
+        obj = cls(**raw['_source'])
+        obj._update_meta(raw['_id'], raw.get('_version'))
+        return obj
 
     def index(self, **index_args):
         """Write the current object to elasticsearch
@@ -131,7 +132,7 @@ class Document(object):
                                    )
         except elasticsearch.exceptions.ElasticsearchException:
             return None
-        return cls().from_raw_es_data(res)
+        return cls.from_raw_es_data(res)
 
     @classmethod
     def mget(cls, ids):
@@ -141,7 +142,7 @@ class Document(object):
                                   doc_type=cls.DOC_TYPE,
                                   body={'ids': ids},
                                  ).get('docs')
-        return [d['found'] and cls().from_raw_es_data(d) or None for d in docs]
+        return [d['found'] and cls.from_raw_es_data(d) or None for d in docs]
 
     @classmethod
     def search(cls, body):
@@ -150,7 +151,7 @@ class Document(object):
                                     body=body
                                    )
         return [
-            (cls().from_raw_es_data(d), d['_score'])
+            (cls.from_raw_es_data(d), d['_score'])
             for d in docs['hits']['hits']
         ]
 
