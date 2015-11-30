@@ -58,9 +58,6 @@ class Document(object):
         self._meta = {}
         self._prepare_source(**kwargs)
         self._update_meta()
-        if self._update_properties is None:
-            # app property attributes
-            self._update_properties = self._source.keys()
 
     @classmethod
     def from_raw_es_data(cls, raw):
@@ -76,6 +73,7 @@ class Document(object):
     def index(self, **index_args):
         """Write the current object to elasticsearch
         """
+        self._apply_defaults()
         return self._get_es().index(
                     index=self._meta['_index'],
                     doc_type=self._meta['_type'],
@@ -95,9 +93,11 @@ class Document(object):
         update_values = {}
 
         def apply_property(name, prop):
-            value = getattr(self, name)
-            if value is not None:
+            not_provided = object()
+            value = getattr(self, name, not_provided)
+            if value != not_provided:
                 update_values[prop.name] = value
+        self._apply_defaults()
         if properties is None:
             properties = self._update_properties
         for (name, prop) in self._properties():
@@ -171,14 +171,26 @@ class Document(object):
         """
         return cls._get_es().indices.refresh(index=cls.INDEX, **refresh_args)
 
+    def get_source(self):
+        self._apply_defaults()
+        return self._source
+
     def _prepare_source(self, **kwargs):
         for (name, prop) in self._properties():
             if prop.name in kwargs:
                 self._source[prop.name] = kwargs[prop.name]
-            else:
+                if prop.primary_key:
+                    self._meta['_id'] = self._source[prop.name]
+
+    def _apply_defaults(self):
+        for (name, prop) in self._properties():
+            if prop.name not in self._source:
                 self._source[prop.name] = prop.default()
             if prop.primary_key:
                 self._meta['_id'] = self._source[prop.name]
+        # app property attributes
+        if self._update_properties is None:
+            self._update_properties = self._source.keys()
 
     def _update_meta(self, _id=None, _version=None, **kwargs):
         if self._meta is None:
