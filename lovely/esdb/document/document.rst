@@ -60,12 +60,43 @@ Implement a document class::
 
 Internal data::
 
-    >>> doc._source
-    {'pw': None, 'title': u'', 'id': u'1', 'name': u''}
-    >>> doc._meta
-    {'_type': 'default', '_id': u'1', '_version': None, '_index': 'mydocument'}
-    >>> doc._update_properties
-    ['pw', 'title', 'id', 'name']
+    >>> from pprint import pprint
+    >>> pprint(doc.get_source())
+    {'id': u'1', 'title': u''}
+    >>> pprint(doc._meta)
+    {'_id': u'1', '_index': 'mydocument', '_type': 'default', '_version': None}
+    >>> sorted(doc._update_properties)
+    ['id', 'name', 'password', 'title']
+
+
+Get source
+==========
+
+The ``get_source`` method only returns properties which are initialized::
+
+    >>> doc2 = MyDocument()
+    >>> doc2.get_source()
+    {}
+
+Initialization in constructor::
+
+    >>> doc3 = MyDocument(id=u'someid')
+    >>> doc3.get_source()
+    {'id': u'someid'}
+
+Initialization via property setter::
+
+    >>> doc3.name = u'Günter'
+    >>> pprint(doc3.get_source())
+    {'id': u'someid', 'name': u'G\xfcnter'}
+
+If a property getter is used, the default value is initialized and hence
+available on the source::
+
+    >>> doc3.title
+    u''
+    >>> pprint(doc3.get_source())
+    {'id': u'someid', 'name': u'G\xfcnter', 'title': u''}
 
 
 Save A Document
@@ -85,8 +116,8 @@ Get A Document From Elasticsearch
 Get the document::
 
     >>> myDoc = MyDocument.get(doc.id)
-    >>> myDoc._source
-    {'pw': None, 'title': u'', 'id': u'1', 'name': u''}
+    >>> pprint(myDoc.get_source())
+    {'id': u'1', 'name': u'', 'password': None, 'title': u''}
     >>> myDoc._meta
     {'_type': 'default', '_id': u'1', '_version': 1, '_index': 'mydocument'}
 
@@ -160,8 +191,16 @@ properties::
 Only the title was changed in the database::
 
     >>> myDoc = MyDocument.get(doc.id)
-    >>> myDoc._source
-    {'pw': u'secret', 'title': u'title', 'id': u'1', 'name': u''}
+    >>> pprint(myDoc.get_source())
+    {'id': u'1', 'name': u'', 'password': u'secret', 'title': u'title'}
+
+Set a value to None::
+
+    >>> myDoc.name = None
+    >>> _ = myDoc.update(['name'])
+    >>> myDoc = MyDocument.get(myDoc.id)
+    >>> print myDoc.get_source()['name']
+    None
 
 
 Updating A Not Existing Document
@@ -179,9 +218,18 @@ Update the document::
 Because the document is a new document it is fully written to elasticsearch::
 
     >>> myDoc = MyDocument.get(doc1.id)
-    >>> myDoc._source
-    {'pw': None, 'title': u'title 2', 'id': u'newdoc', 'name': u'name 2'}
+    >>> pprint(myDoc.get_source())
+    {'id': u'newdoc', 'name': u'name 2', 'password': None, 'title': u'title 2'}
 
+Create a document with a default values (id)::
+
+    >>> nextId = currentId + 1
+    >>> doc3 = MyDocument(title='title 3', name='name 3')
+    >>> doc3.update(['name'])
+    {u'_type': u'default', u'_id': u'3', u'_version': 1, u'_index': u'mydocument'}
+    >>> myDoc = MyDocument.get(nextId)
+    >>> pprint(myDoc.get_source())
+    {'id': u'3', 'name': u'name 3', 'password': None, 'title': u'title 3'}
 
 Search
 ======
@@ -203,7 +251,7 @@ Refresh index and do a search query::
 A tuple with the object and the search score is returned::
 
     >>> docs
-    [(<MyDocument object at 0x...>, 1...)]
+    [(<MyDocument object at 0x...>, 2...)]
     >>> print docs[0][0].title
     title 2
 

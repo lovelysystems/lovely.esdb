@@ -54,13 +54,12 @@ class Document(object):
                                 self.__class__.__name__))
         if 'update_properties' in kwargs:
             self._update_properties = kwargs.pop('update_properties')
+        else:
+            self._update_properties = [name for name, p in self._properties()]
         self._source = {}
         self._meta = {}
         self._prepare_source(**kwargs)
         self._update_meta()
-        if self._update_properties is None:
-            # app property attributes
-            self._update_properties = self._source.keys()
 
     @classmethod
     def from_raw_es_data(cls, raw):
@@ -76,6 +75,7 @@ class Document(object):
     def index(self, **index_args):
         """Write the current object to elasticsearch
         """
+        self._apply_defaults()
         return self._get_es().index(
                     index=self._meta['_index'],
                     doc_type=self._meta['_type'],
@@ -94,15 +94,12 @@ class Document(object):
         """
         update_values = {}
 
-        def apply_property(name, prop):
-            value = getattr(self, name)
-            if value is not None:
-                update_values[prop.name] = value
+        self._apply_defaults()
         if properties is None:
             properties = self._update_properties
         for (name, prop) in self._properties():
             if name in properties:
-                apply_property(name, prop)
+                update_values[prop.name] = getattr(self, name)
         body = {
             "doc": update_values,
             "upsert": self._source
@@ -116,6 +113,8 @@ class Document(object):
                 )
 
     def delete(self, **delete_args):
+        """Delete an object from elasticsearch
+        """
         return self._get_es().delete(
                     index=self._meta['_index'],
                     doc_type=self._meta['_type'],
@@ -125,6 +124,8 @@ class Document(object):
 
     @classmethod
     def get(cls, id):
+        """Get an object with a specific primary key from elasticsearch
+        """
         try:
             res = cls._get_es().get(index=cls.INDEX,
                                     doc_type=cls.DOC_TYPE,
@@ -136,6 +137,8 @@ class Document(object):
 
     @classmethod
     def mget(cls, ids):
+        """Get multiple objects from elasticsearch
+        """
         if not ids:
             return []
         docs = cls._get_es().mget(index=cls.INDEX,
@@ -146,6 +149,8 @@ class Document(object):
 
     @classmethod
     def search(cls, body):
+        """Retrieve objects from elasticsearch via a search query
+        """
         docs = cls._get_es().search(index=cls.INDEX,
                                     doc_type=cls.DOC_TYPE,
                                     body=body
@@ -157,6 +162,10 @@ class Document(object):
 
     @classmethod
     def count(cls, body=None, **count_args):
+        """Get the count of data stored in elasticsearch.
+
+        It's possible to provide a query with the ``body`` argument.
+        """
         res = cls._get_es().count(
             index=cls.INDEX,
             doc_type=cls.DOC_TYPE,
@@ -171,14 +180,30 @@ class Document(object):
         """
         return cls._get_es().indices.refresh(index=cls.INDEX, **refresh_args)
 
+    def get_source(self):
+        """This method returns all initialized properties of the instance.
+
+        If a property has not been initialized yet it's not provided.
+        Initializing may happen via keywords in the constructor, via setters
+        or via getters.
+        """
+        res = {}
+        for name, prop in self._properties():
+            if prop.name in self._source:
+                res[name] = self._source[prop.name]
+        return res
+
     def _prepare_source(self, **kwargs):
         for (name, prop) in self._properties():
             if prop.name in kwargs:
-                self._source[prop.name] = kwargs[prop.name]
-            else:
-                self._source[prop.name] = prop.default()
-            if prop.primary_key:
-                self._meta['_id'] = self._source[prop.name]
+                setattr(self, name, kwargs[prop.name])
+
+    def _apply_defaults(self):
+        """Apply default values to all uninitialized properties
+        """
+        for (name, prop) in self._properties():
+            if prop.name not in self._source:
+                getattr(self, name)
 
     def _update_meta(self, _id=None, _version=None, **kwargs):
         if self._meta is None:
