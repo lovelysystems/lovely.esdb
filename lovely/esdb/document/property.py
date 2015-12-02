@@ -29,7 +29,7 @@ class Property(object):
             return obj._source[self.name]
         else:
             value = self.default()
-            obj._source[self.name] = value
+            self.__set__(obj, value)
             return value
 
     def __set__(self, obj, value):
