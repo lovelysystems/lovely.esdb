@@ -124,7 +124,7 @@ class Document(object):
 
     @classmethod
     def get(cls, id):
-        """Get an object with a specific primary key from elasticsearch
+        """Get an object with a specific id from elasticsearch
         """
         try:
             res = cls._get_es().get(index=cls.INDEX,

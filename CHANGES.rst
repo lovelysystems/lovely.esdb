@@ -5,6 +5,9 @@ Changes for lovely.esdb
 unreleased
 ==========
 
+2015/12/02 0.0.7
+================
+
  - apply default values not in init method but when values are read or written
 
  - do not initially call default() property methods on reading operations
