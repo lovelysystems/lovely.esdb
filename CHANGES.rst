@@ -5,6 +5,9 @@ Changes for lovely.esdb
 unreleased
 ==========
 
+2015/12/11 0.1.0
+================
+
  - Document.search now returns the full ES response
    Note: this is a backward incompatibiliy.
 
