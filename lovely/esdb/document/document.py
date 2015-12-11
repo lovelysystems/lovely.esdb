@@ -148,17 +148,22 @@ class Document(object):
         return [d['found'] and cls.from_raw_es_data(d) or None for d in docs]
 
     @classmethod
-    def search(cls, body):
+    def search(cls, body, resolve_hits=True):
         """Retrieve objects from elasticsearch via a search query
+
+        Returns the ES search result. If resolve_hits is set to true the hits
+        are converted to Documents.
         """
         docs = cls._get_es().search(index=cls.INDEX,
                                     doc_type=cls.DOC_TYPE,
                                     body=body
                                    )
-        return [
-            (cls.from_raw_es_data(d), d['_score'])
-            for d in docs['hits']['hits']
-        ]
+        if resolve_hits:
+            data = []
+            for d in docs['hits']['hits']:
+                data.append(cls.from_raw_es_data(d))
+            docs['hits']['hits'] = data
+        return docs
 
     @classmethod
     def count(cls, body=None, **count_args):
@@ -199,10 +204,11 @@ class Document(object):
                 setattr(self, name, kwargs[prop.name])
 
     def _apply_defaults(self):
-        """Apply default values to all uninitialized properties
+        """Apply default values to properties not contained in the source
         """
         for (name, prop) in self._properties():
             if prop.name not in self._source:
+                # reading the property will set the default
                 getattr(self, name)
 
     def _update_meta(self, _id=None, _version=None, **kwargs):

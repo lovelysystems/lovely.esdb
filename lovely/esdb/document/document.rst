@@ -244,27 +244,25 @@ Refresh index and do a search query::
     ...         }
     ...     }
     ... }
-    >>> prevId = currentId
-
     >>> docs = MyDocument.search(body)
 
-A tuple with the object and the search score is returned::
+An elasticsearch result object is returned::
 
     >>> docs
-    [(<MyDocument object at 0x...>, 2...)]
-    >>> print docs[0][0].title
+    {u'hits': {u'hits': [<MyDocument ...], u'total': 1, u'max_score': ...}, u'_shards': {...}, ...}
+
+The hits are resolved to documents::
+
+    >>> docs['hits']['hits']
+    [<MyDocument ...]
+    >>> print docs['hits']['hits'][0].title
     title 2
 
 Empty list is returned if nothing is found::
 
     >>> body['query']['match']['title'] = 'xxxx'
-    >>> MyDocument.search(body)
+    >>> MyDocument.search(body)['hits']['hits']
     []
-
-A search must not call the default() method for given properties::
-
-    >>> currentId == prevId
-    True
 
 
 Delete
