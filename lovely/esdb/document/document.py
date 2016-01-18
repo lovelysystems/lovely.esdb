@@ -1,6 +1,7 @@
 import inspect
 
 import elasticsearch.exceptions
+from elasticsearch.helpers import bulk
 
 from .property import Property
 
@@ -84,6 +85,16 @@ class Document(object):
                     **index_args
                 )
 
+    def delete(self, **delete_args):
+        """Delete an object from elasticsearch
+        """
+        return self._get_es().delete(
+                    index=self._meta['_index'],
+                    doc_type=self._meta['_type'],
+                    id=self._meta['_id'],
+                    **delete_args
+                )
+
     def update(self, properties=None, **update_args):
         """Store the updated document in elasticsearch
 
@@ -112,15 +123,24 @@ class Document(object):
                     **update_args
                 )
 
-    def delete(self, **delete_args):
-        """Delete an object from elasticsearch
+    @classmethod
+    def bulk_update(cls, objs, **kwargs):
+        """Update given objects in a bulk operation
+
+        TODO: Add support for `doc_as_upsert` and `fields` once updated to ES
+              >= 2.0
         """
-        return self._get_es().delete(
-                    index=self._meta['_index'],
-                    doc_type=self._meta['_type'],
-                    id=self._meta['_id'],
-                    **delete_args
-                )
+        actions = []
+        for o in objs:
+            a = {
+                '_op_type': 'update',
+                '_index': cls.INDEX,
+                '_type': cls.DOC_TYPE,
+                '_id': o.id,
+                'doc': o.get_source(),
+            }
+            actions.append(a)
+        return bulk(cls._get_es(), actions, **kwargs)
 
     @classmethod
     def get(cls, id):

@@ -231,6 +231,35 @@ Create a document with a default values (id)::
     >>> pprint(myDoc.get_source())
     {'id': u'3', 'name': u'name 3', 'password': None, 'title': u'title 3'}
 
+
+Update multiple documents
+=========================
+
+Updating multiple documents in one single bulk request use the methode
+`bulk_update`::
+
+    >>> doc1.name = "bulk1"
+    >>> doc2.name = "bulk2"
+    >>> doc3.name = "bulk3"
+
+    >>> MyDocument.bulk_update([doc1, doc2, doc3])
+    (3, [])
+
+As we can see the documents has been updated::
+
+    >>> doc1, doc2, doc3 = MyDocument.mget([doc1.id, doc2.id, doc3.id])
+    >>> doc1.name, doc2.name, doc3.name
+    (u'bulk1', u'bulk2', u'bulk3')
+
+If one given document does not exist an exception is raised::
+
+    >>> doc4 = MyDocument(id='newdoc4', title='title 4', name='name 4')
+
+    >>> doc4, = MyDocument.bulk_update([doc4])
+    Traceback (most recent call last):
+    BulkIndexError: ('1 document(s) failed to index.', [{...}}])
+
+
 Search
 ======
 
