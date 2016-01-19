@@ -5,6 +5,8 @@ Changes for lovely.esdb
 unreleased
 ==========
 
+ - bulk updates with conflict resolution
+
  - updating only initialized properties
 
  - added Bulk class

@@ -113,6 +113,14 @@ Updating only specific porperties::
     >>> MyObj.get(obj1.id).name == name_before_update
     True
 
+For conflict resolution the update method supports the keyword argument
+`retry_on_conflict` which accepts an integer value indicating how ofter
+elasticsearch will retry to update the document in case of a version conflict::
+
+    >>> b.update(obj1, retry_on_conflict=3)
+    >>> b.flush()
+    (1, [])
+
 Deleting documents::
 
     >>> b.delete(obj1)
