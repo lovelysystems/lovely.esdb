@@ -212,6 +212,13 @@ Updating a document with an object *not* loaded from the database::
     >>> notLoadedDoc.get_source()
     {'id': u'1', 'name': 'not loaded'}
 
+The update body will reflect the upcoming changes. Note: The `upsert` contains
+all available properties with possible defaults::
+
+    >>> notLoadedDoc.get_update_body()
+    {'doc': {'id': u'1', 'name': 'not loaded'},
+     'upsert': {'pw': None, 'title': u'', 'id': u'1', 'name': 'not loaded'}}
+
     >>> _ = notLoadedDoc.update()
 
     >>> notLoadedDoc.get_source()
