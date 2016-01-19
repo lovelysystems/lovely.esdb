@@ -76,14 +76,18 @@ class Document(object):
     def index(self, **index_args):
         """Write the current object to elasticsearch
         """
-        self._apply_defaults()
+        body = self.get_index_body()
         return self._get_es().index(
                     index=self._meta['_index'],
                     doc_type=self._meta['_type'],
                     id=self._meta['_id'],
-                    body=self._source,
+                    body=body,
                     **index_args
                 )
+
+    def get_index_body(self):
+        self._apply_defaults()
+        return self._source
 
     def delete(self, **delete_args):
         """Delete an object from elasticsearch
@@ -103,6 +107,16 @@ class Document(object):
         If this is an existing document only the properties defined in
         "update_properties" are updated.
         """
+        body = self.get_update_body(properties)
+        return self._get_es().update(
+                    index=self._meta['_index'],
+                    doc_type=self._meta['_type'],
+                    id=self._meta['_id'],
+                    body=body,
+                    **update_args
+                )
+
+    def get_update_body(self, properties=None):
         update_values = {}
 
         self._apply_defaults()
@@ -111,17 +125,10 @@ class Document(object):
         for (name, prop) in self._properties():
             if name in properties:
                 update_values[prop.name] = getattr(self, name)
-        body = {
+        return {
             "doc": update_values,
             "upsert": self._source
         }
-        return self._get_es().update(
-                    index=self._meta['_index'],
-                    doc_type=self._meta['_type'],
-                    id=self._meta['_id'],
-                    body=body,
-                    **update_args
-                )
 
     @classmethod
     def bulk_update(cls, objs, **kwargs):

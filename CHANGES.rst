@@ -5,8 +5,7 @@ Changes for lovely.esdb
 unreleased
 ==========
 
- - added static method `bulk_update` to update multiple docuemnts with one
-   single bulk request
+ - added Bulk class
 
 2015/12/11 0.1.0
 ================

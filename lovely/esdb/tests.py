@@ -86,4 +86,5 @@ def create_suite(testfile,
 def test_suite():
     return unittest.TestSuite((
         create_suite('document/document.rst'),
+        create_suite('document/bulk.rst'),
     ))
