@@ -124,8 +124,8 @@ class Document(object):
             if name in properties and prop.name in self._source:
                 update_values[prop.name] = self._source[prop.name]
         return {
-            "doc": update_values,  # update_values,
-            "upsert": self._get_source_with_defaults()  # self._source
+            "doc": update_values,
+            "upsert": self._get_source_with_defaults()
         }
 
     @classmethod
