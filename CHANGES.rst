@@ -5,6 +5,9 @@ Changes for lovely.esdb
 unreleased
 ==========
 
+2016/01/19 0.1.1
+================
+
  - bulk updates with conflict resolution
 
  - updating only initialized properties
