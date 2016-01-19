@@ -27,12 +27,12 @@ class Bulk(object):
             )
         )
 
-    def update(self, doc):
+    def update(self, doc, properties=None):
         self.actions.append(
             self._get_action_base(
                 'update',
                 doc,
-                **doc.get_update_body()
+                **doc.get_update_body(properties)
             )
         )
 

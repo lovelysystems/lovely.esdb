@@ -27,6 +27,7 @@ Test Setup::
     ...
     ...     id = Property(primary_key=True, default=get_my_id)
     ...     title = Property(default=u'')
+    ...     name = Property(default=u'')
 
     >>> es_client.indices.create(
     ...     index=MyObj.INDEX,
@@ -36,7 +37,8 @@ Test Setup::
     ...             "default" : {
     ...                 "properties" : {
     ...                     "id" : { "type" : "string", "index" : "not_analyzed" },
-    ...                     "title" : { "type" : "string", "index" : "analyzed" }
+    ...                     "title" : { "type" : "string", "index" : "analyzed" },
+    ...                     "name" : { "type" : "string", "index" : "analyzed" }
     ...                 }
     ...             }
     ...         }
@@ -55,7 +57,7 @@ Flushing without added actions does not do anything::
 
 Indexing documents::
 
-    >>> obj1 = MyObj(title="One")
+    >>> obj1 = MyObj(title="One", name="Hansi")
     >>> obj2 = MyObj(title="Two")
     >>> obj3 = MyObj(title="Three")
     >>> obj4 = MyObj(title="Four")
@@ -97,6 +99,21 @@ Updating documents::
     u'updated 1'
     >>> MyObj.get(obj2.id).title
     u'updated 2'
+
+Updating only specific porperties::
+
+    >>> name_before_update = obj1.name
+    >>> obj1.name = u'Hupsi'
+    >>> obj1.title = "updated 1 with props"
+
+    >>> b.update(obj1, properties=['title'])
+    >>> b.flush()
+    (1, [])
+
+    >>> MyObj.get(obj1.id).title
+    u'updated 1 with props'
+    >>> MyObj.get(obj1.id).name == name_before_update
+    True
 
 Deleting documents::
 
