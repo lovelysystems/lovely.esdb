@@ -118,15 +118,14 @@ class Document(object):
     def get_update_body(self, properties=None):
         update_values = {}
 
-        self._apply_defaults()
         if properties is None:
             properties = self._update_properties
         for (name, prop) in self._properties():
-            if name in properties:
-                update_values[prop.name] = getattr(self, name)
+            if name in properties and prop.name in self._source:
+                update_values[prop.name] = self._source[prop.name]
         return {
-            "doc": update_values,
-            "upsert": self._source
+            "doc": update_values,  # update_values,
+            "upsert": self._get_source_with_defaults()  # self._source
         }
 
     @classmethod
@@ -193,16 +192,27 @@ class Document(object):
         return cls._get_es().indices.refresh(index=cls.INDEX, **refresh_args)
 
     def get_source(self):
-        """This method returns all initialized properties of the instance.
+        """This method returns all initialised properties of the instance.
 
-        If a property has not been initialized yet it's not provided.
-        Initializing may happen via keywords in the constructor, via setters
-        or via getters.
+        If a property has not been initialised yet it's not provided.
+        Initialising may happen via keywords in the constructor or via
+        setters.
         """
         res = {}
         for name, prop in self._properties():
             if prop.name in self._source:
                 res[name] = self._source[prop.name]
+        return res
+
+    def _get_source_with_defaults(self):
+        """Return a dict representation of this document
+
+        *All* properties are included. If one property hasn't been initialised
+        yet the properties default value will be used.
+        """
+        res = {}
+        for (name, prop) in self._properties():
+            res[prop.name] = getattr(self, name)
         return res
 
     def _prepare_source(self, **kwargs):
@@ -215,8 +225,9 @@ class Document(object):
         """
         for (name, prop) in self._properties():
             if prop.name not in self._source:
-                # reading the property will set the default
-                getattr(self, name)
+                # reading the property will return the default - and set that
+                # value
+                setattr(self, name, getattr(self, name))
 
     def _update_meta(self, _id=None, _version=None, **kwargs):
         if self._meta is None:

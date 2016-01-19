@@ -28,9 +28,10 @@ class Property(object):
         if self.name in obj._source:
             return obj._source[self.name]
         else:
-            value = self.default()
-            self.__set__(obj, value)
-            return value
+            default = self.default()
+            if self.primary_key:
+                self.__set__(obj, default)
+            return default
 
     def __set__(self, obj, value):
         obj._source[self.name] = value

@@ -58,11 +58,11 @@ Implement a document class::
     >>> doc.title
     u''
 
-Internal data::
+Internal data. Only initialised properties exists in _source::
 
     >>> from pprint import pprint
     >>> pprint(doc.get_source())
-    {'id': u'1', 'title': u''}
+    {'id': u'1'}
     >>> pprint(doc._meta)
     {'_id': u'1', '_index': 'mydocument', '_type': 'default', '_version': None}
     >>> sorted(doc._update_properties)
@@ -72,31 +72,35 @@ Internal data::
 Get source
 ==========
 
-The ``get_source`` method only returns properties which are initialized::
+The ``get_source`` method only returns properties which are initialised::
 
     >>> doc2 = MyDocument()
     >>> doc2.get_source()
     {}
 
-Initialization in constructor::
+Initialisation in constructor::
 
     >>> doc3 = MyDocument(id=u'someid')
     >>> doc3.get_source()
     {'id': u'someid'}
 
-Initialization via property setter::
+Initialisation via property setter::
 
     >>> doc3.name = u'Günter'
     >>> pprint(doc3.get_source())
     {'id': u'someid', 'name': u'G\xfcnter'}
 
-If a property getter is used, the default value is initialized and hence
-available on the source::
+Accessing a property which hasn't been initialised yet will lead return the
+properties default value::
 
     >>> doc3.title
     u''
+
+If a property getter is used, the default value is not initialised and hence
+not available on the source. ::
+
     >>> pprint(doc3.get_source())
-    {'id': u'someid', 'name': u'G\xfcnter', 'title': u''}
+    {'id': u'someid', 'name': u'G\xfcnter'}
 
 
 Save A Document
@@ -202,6 +206,22 @@ Set a value to None::
     >>> print myDoc.get_source()['name']
     None
 
+Updating a document with an object *not* loaded from the database::
+
+    >>> notLoadedDoc = MyDocument(id=myDoc.id, name='not loaded')
+    >>> notLoadedDoc.get_source()
+    {'id': u'1', 'name': 'not loaded'}
+
+    >>> _ = notLoadedDoc.update()
+
+    >>> notLoadedDoc.get_source()
+    {'id': u'1', 'name': 'not loaded'}
+
+Loading the updated object from the database will show only the property
+'name' has been updated::
+
+    >>> MyDocument.get(myDoc.id).get_source()
+    {'title': u'title', 'password': u'secret', 'id': u'1', 'name': u'not loaded'}
 
 Updating A Not Existing Document
 ================================
