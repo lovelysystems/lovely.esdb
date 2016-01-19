@@ -27,7 +27,7 @@ class Bulk(object):
             )
         )
 
-    def update(self, doc, properties=None, retry_on_conflict=0):
+    def update(self, doc, properties=None, retry_on_conflict=5):
         self.actions.append(
             self._get_action_base(
                 'update',

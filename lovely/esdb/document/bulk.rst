@@ -115,7 +115,8 @@ Updating only specific porperties::
 
 For conflict resolution the update method supports the keyword argument
 `retry_on_conflict` which accepts an integer value indicating how ofter
-elasticsearch will retry to update the document in case of a version conflict::
+elasticsearch will retry to update the document in case of a version conflict.
+The default value is set to 5::
 
     >>> b.update(obj1, retry_on_conflict=3)
     >>> b.flush()
