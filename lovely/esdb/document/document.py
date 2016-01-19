@@ -1,7 +1,6 @@
 import inspect
 
 import elasticsearch.exceptions
-from elasticsearch.helpers import bulk
 
 from .property import Property
 
@@ -129,25 +128,6 @@ class Document(object):
             "doc": update_values,
             "upsert": self._source
         }
-
-    @classmethod
-    def bulk_update(cls, objs, **kwargs):
-        """Update given objects in a bulk operation
-
-        TODO: Add support for `doc_as_upsert` and `fields` once updated to ES
-              >= 2.0
-        """
-        actions = []
-        for o in objs:
-            a = {
-                '_op_type': 'update',
-                '_index': cls.INDEX,
-                '_type': cls.DOC_TYPE,
-                '_id': o.id,
-                'doc': o.get_source(),
-            }
-            actions.append(a)
-        return bulk(cls._get_es(), actions, **kwargs)
 
     @classmethod
     def get(cls, id):
