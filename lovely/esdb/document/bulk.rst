@@ -53,7 +53,6 @@ Create a Bulk object::
 Flushing without added actions does not do anything::
 
     >>> b.flush()
-    (0, [])
 
 Indexing documents::
 
@@ -84,7 +83,6 @@ flush nothing do::
     0
 
     >>> b.flush()
-    (0, [])
 
 Updating documents::
 

@@ -42,11 +42,12 @@ class Bulk(object):
         )
 
     def flush(self):
-        res = bulk(self.es,
-                   self.actions,
-                   **self.bulk_args)
-        self.actions = []
-        return res
+        if self.actions:
+            res = bulk(self.es,
+                       self.actions,
+                       **self.bulk_args)
+            self.actions = []
+            return res
 
     def _get_action_base(self, action, document, **kwargs):
         res = {
