@@ -293,6 +293,48 @@ Empty list is returned if nothing is found::
     []
 
 
+Scan
+====
+
+Scan works as search but returns all results.
+
+Create a big set of documents::
+
+    >>> for i in range(1000):
+    ...     doc = MyDocument(id="scan %i" % i, name=i % 2 and "even" or "odd")
+    ...     _ = doc.index()
+    >>> _ = MyDocument.refresh()
+
+A scan returns a simple list with resolved objects::
+
+    >>> body = {
+    ...     "query": {
+    ...         "match": {
+    ...             "name": "even"
+    ...         }
+    ...     }
+    ... }
+    >>> res = MyDocument.scan(body)
+    >>> len(res)
+    500
+    >>> print res[0]
+    <MyDocument object at 0x...>
+
+If the optional resolve_source parameter is set to False, the original ES
+response is returned, including score::
+
+    >>> body['query']['match']['name'] = "odd"
+    >>> res = MyDocument.scan(body, resolve_source=False)
+    >>> len(res)
+    500
+    >>> pprint(res[0])
+    {u'_id': u'scan 0',
+     u'_index': u'mydocument',
+     u'_score': 0.0,
+     u'_source': {u'id': u'scan 0', u'name': u'odd', u'pw': None, u'title': u''},
+     u'_type': u'default'}
+
+
 Delete
 ======
 

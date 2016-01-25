@@ -25,6 +25,7 @@ setup(
               'collective.xmltestreport',
               'crate',
               'lovely.testlayers',
+              'requests'
           ],
     ),
     zip_safe=False,

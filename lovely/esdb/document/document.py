@@ -1,6 +1,7 @@
 import inspect
 
 import elasticsearch.exceptions
+from elasticsearch.helpers import scan
 
 from .property import Property
 
@@ -170,6 +171,22 @@ class Document(object):
                 data.append(cls.from_raw_es_data(d))
             docs['hits']['hits'] = data
         return docs
+
+    @classmethod
+    def scan(cls, body, resolve_source=True):
+        docs = scan(
+            cls._get_es(),
+            body,
+            scroll=u'1m',
+            index=cls.INDEX,
+            doc_type=cls.DOC_TYPE
+        )
+        if resolve_source:
+            data = []
+            for d in docs:
+                data.append(cls.from_raw_es_data(d))
+            return data
+        return [d for d in docs]
 
     @classmethod
     def count(cls, body=None, **count_args):

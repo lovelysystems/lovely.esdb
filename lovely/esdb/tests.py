@@ -2,6 +2,7 @@ import os
 import unittest
 import doctest
 import requests
+import pprint
 
 from crate.testing.layer import CrateLayer
 from elasticsearch import Elasticsearch
@@ -39,6 +40,7 @@ crate_layer = CrateLayer('crate',
 def setUp(test):
     delete_crate_indexes()
     test.globs['es_client'] = Elasticsearch(['localhost:%s' % crate_port])
+    test.globs['pprint'] = pprint.pprint
     wait_for_cluster()
 
 

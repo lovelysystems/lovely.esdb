@@ -5,6 +5,8 @@ Changes for lovely.esdb
 unreleased
 ==========
 
+ - added scan method
+
 2016/01/19 0.1.1
 ================
 
