@@ -141,8 +141,18 @@ Create another document::
 
 Get a list of documents::
 
-    >>> MyDocument.mget(['1', doc2.id])
+    >>> res = MyDocument.mget(['1', doc2.id])
+    >>> print res
     [<MyDocument object at 0x...>, <MyDocument object at 0x...>]
+
+The order is the same as the provided id list::
+
+    >>> print res[0].id
+    1
+
+    >>> res = MyDocument.mget([doc2.id, '1'])
+    >>> print res[0].id == doc2.id
+    True
 
 A mget must not call the default() method for given properties::
 
