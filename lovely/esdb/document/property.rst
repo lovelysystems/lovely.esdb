@@ -10,9 +10,11 @@ Custom Getter and Setter
 
 Properties might use custom getter and/or setter for accessing field values.
 Custom getter and setter methods are instances methods of a document decorated
-as getter or setter of one specific property::
+as getter or setter of one specific property.
 
-Note: These custom getters and setters will be called with the value
+.. note::
+
+      These custom getters and setters will be called with the value
       determined by the Property implementation. The modified value has to be
       returned to the Property implementation which is pretty unlikely for a
       setter method.
