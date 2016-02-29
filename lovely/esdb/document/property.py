@@ -21,22 +21,32 @@ class Property(object):
                 return default
             self.default = getDefault
         self.primary_key = primary_key
+        self._setter = lambda obj, value: value
+        self._getter = lambda obj, value: value
 
     def __get__(self, obj, cls=None):
         if obj is None:
             return self
         if self.name in obj._source:
-            return obj._source[self.name]
+            result = obj._source[self.name]
         else:
             default = self.default()
             if self.primary_key:
                 self.__set__(obj, default)
-            return default
+            result = default
+        return self._getter(obj, result)
 
     def __set__(self, obj, value):
+        value = self._setter(obj, value)
         obj._source[self.name] = value
         if self.primary_key:
             obj._meta['_id'] = value
 
     def __delete__(self, obj):
         del obj._source[self.name]
+
+    def getter(self, getter):
+        self._getter = getter
+
+    def setter(self, setter):
+        self._setter = setter
