@@ -68,7 +68,8 @@ class Document(object):
         raw must contain the data returned from ES which contains the
         "_source" property.
         """
-        obj = cls(**raw['_source'])
+        obj = cls()
+        obj._source = raw['_source']
         obj._update_meta(raw['_id'], raw.get('_version'))
         return obj
 

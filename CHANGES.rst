@@ -5,6 +5,8 @@ Changes for lovely.esdb
 unreleased
 ==========
 
+ - do not invoke property setter when loading Document form database
+
 2016/01/19 0.1.1
 ================
 
