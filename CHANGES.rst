@@ -5,6 +5,9 @@ Changes for lovely.esdb
 unreleased
 ==========
 
+2016/02/29 0.1.2
+================
+
  - added possibility to set custom getter/setter on properties
 
  - do not invoke property setter when loading Document form database
