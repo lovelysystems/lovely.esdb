@@ -377,7 +377,7 @@ the meta class of such a document is loaded::
     ...     id1 = Property(primary_key=True)
     ...     id2 = Property(primary_key=True)
     Traceback (most recent call last):
-    Exception: Multiple primary key properties.
+    AttributeError: Multiple primary key properties.
 
 If no primary key was defined one propery exception will be raised when
 `primary_key` is accessed::
@@ -390,7 +390,7 @@ If no primary key was defined one propery exception will be raised when
     >>> nokey = NoKeyDocument(id='1')
     >>> nokey.primary_key
     Traceback (most recent call last):
-    Exception: No primary key column defined
+    AttributeError: No primary key column defined
 
 
 Clean Up

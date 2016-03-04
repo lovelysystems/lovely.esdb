@@ -28,7 +28,9 @@ class DocumentMeta(type):
                 prop.name = name
                 if prop.primary_key:
                     if cls._primary_key_property is not None:
-                        raise Exception("Multiple primary key properties.")
+                        raise AttributeError(
+                            "Multiple primary key properties."
+                        )
                     cls._primary_key_property = prop
         super(DocumentMeta, cls).__init__(name, bases, dct)
 
@@ -213,7 +215,7 @@ class Document(object):
     @property
     def primary_key(self):
         if self._primary_key_property is None:
-            raise Exception("No primary key column defined")
+            raise AttributeError("No primary key column defined")
         return self._primary_key_property
 
     def _get_source_with_defaults(self):
