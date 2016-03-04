@@ -55,7 +55,7 @@ class Bulk(object):
             "_op_type": action,
             "_index": document.INDEX,
             "_type": document.DOC_TYPE,
-            "_id": document.id,
+            "_id": document.primary_key,
         }
         res.update(kwargs)
         return res

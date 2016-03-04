@@ -26,6 +26,10 @@ class DocumentMeta(type):
         for name, prop in dct.iteritems():
             if isinstance(prop, Property) and prop.name is None:
                 prop.name = name
+                if prop.primary_key:
+                    if cls._primary_key_property is not None:
+                        raise Exception("Multiple primary key properties.")
+                    cls._primary_key_property = prop
         super(DocumentMeta, cls).__init__(name, bases, dct)
 
 
@@ -44,6 +48,7 @@ class Document(object):
     _source = None
     _meta = None
     _update_properties = None
+    _primary_key_property = None
 
     def __init__(self, **kwargs):
         if self.INDEX is None:
@@ -205,6 +210,12 @@ class Document(object):
                 res[name] = self._source[prop.name]
         return res
 
+    @property
+    def primary_key(self):
+        if self._primary_key_property is None:
+            raise Exception("No primary key column defined")
+        return self._primary_key_property
+
     def _get_source_with_defaults(self):
         """Return a dict representation of this document
 
@@ -246,7 +257,8 @@ class Document(object):
         def isProperty(obj):
             return isinstance(obj, Property)
         for prop in inspect.getmembers(self.__class__, isProperty):
-            yield prop
+            if prop[0] != '_primary_key_property':
+                yield prop
 
     @classmethod
     def _get_es(cls):

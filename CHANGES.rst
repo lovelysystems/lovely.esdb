@@ -5,6 +5,12 @@ Changes for lovely.esdb
 unreleased
 ==========
 
+ - fix: bulk implementation must use `primary_key` property instead of `id`
+
+ - do not allow multiple primary key properties on documents
+
+ - added `primary_key` property to document
+
 2016/02/29 0.1.2
 ================
 

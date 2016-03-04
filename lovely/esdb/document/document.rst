@@ -240,6 +240,7 @@ Loading the updated object from the database will show only the property
     >>> MyDocument.get(myDoc.id).get_source()
     {'title': u'title', 'password': u'secret', 'id': u'1', 'name': u'not loaded'}
 
+
 Updating A Not Existing Document
 ================================
 
@@ -353,6 +354,43 @@ And class methods::
     >>> ClientLessDocument.get('2')
     Traceback (most recent call last):
     ValueError: No ES client is set on class ClientLessDocument
+
+
+Primary Key
+===========
+
+The primary key value of a document is provided by the property
+`primary_key`::
+
+    >>> doc_pk = MyDocument(id=u'my_primary_key')
+    >>> doc_pk.primary_key
+    u'my_primary_key'
+
+Exactly one primary key property must be defined on a document. If more than
+one primary key property was defined one proper exception will be raised when
+the meta class of such a document is loaded::
+
+    >>> class TwoKeyDocument(Document):
+    ...
+    ...     INDEX = 'twokeydocument'
+    ...
+    ...     id1 = Property(primary_key=True)
+    ...     id2 = Property(primary_key=True)
+    Traceback (most recent call last):
+    Exception: Multiple primary key properties.
+
+If no primary key was defined one propery exception will be raised when
+`primary_key` is accessed::
+
+    >>> class NoKeyDocument(Document):
+    ...
+    ...     INDEX = 'nokeydocument'
+    ...
+    ...     id = Property(primary_key=False)
+    >>> nokey = NoKeyDocument(id='1')
+    >>> nokey.primary_key
+    Traceback (most recent call last):
+    Exception: No primary key column defined
 
 
 Clean Up

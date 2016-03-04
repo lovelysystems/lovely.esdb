@@ -158,7 +158,7 @@ Mixed Documents::
     ...     INDEX = 'mysecondobj'
     ...     ES = es_client
     ...
-    ...     id = Property(primary_key=True, default=get_my_id)
+    ...     key = Property(primary_key=True, default=get_my_id)
     ...     name = Property(default=u'')
 
     >>> es_client.indices.create(
@@ -168,7 +168,7 @@ Mixed Documents::
     ...         "mappings" : {
     ...             "default" : {
     ...                 "properties" : {
-    ...                     "id" : { "type" : "string", "index" : "not_analyzed" },
+    ...                     "key" : { "type" : "string", "index" : "not_analyzed" },
     ...                     "name" : { "type" : "string", "index" : "analyzed" }
     ...                 }
     ...             }
@@ -186,5 +186,5 @@ Mixed Documents::
     >>> MyObj.get(objA.id).title
     u'Title'
 
-    >>> MySecondObj.get(objB.id).name
+    >>> MySecondObj.get(objB.key).name
     u'Hansi'
