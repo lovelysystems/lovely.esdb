@@ -19,24 +19,25 @@ class DocumentMeta(type):
     def __init__(cls, name, bases, dct):
         # register the document class
         global DOCUMENTREGISTRY
-        key = cls.index_type_name()
-        if name in DOCUMENTREGISTRY[key]:
-            raise NameError(
-                'Duplicate document name "%s" for index type "%s"' %
-                (name, key)
-            )
-        DOCUMENTREGISTRY[key][name] = cls
-        # on all Properties set the name to the class property name if no name
-        # was provided for the property
-        for name, prop in dct.iteritems():
-            if isinstance(prop, Property) and prop.name is None:
-                prop.name = name
-                if prop.primary_key:
-                    if cls._primary_key_property is not None:
-                        raise AttributeError(
-                            "Multiple primary key properties."
-                        )
-                    cls._primary_key_property = prop
+        if cls.INDEX and cls.DOC_TYPE:
+            key = cls.index_type_name()
+            if name in DOCUMENTREGISTRY[key]:
+                raise NameError(
+                    'Duplicate document name "%s" for index type "%s"' %
+                    (name, key)
+                )
+            DOCUMENTREGISTRY[key][name] = cls
+            # on all Properties set the name to the class property name if no
+            # name was provided for the property
+            for name, prop in dct.iteritems():
+                if isinstance(prop, Property) and prop.name is None:
+                    prop.name = name
+                    if prop.primary_key:
+                        if cls._primary_key_property is not None:
+                            raise AttributeError(
+                                "Multiple primary key properties."
+                            )
+                        cls._primary_key_property = prop
         super(DocumentMeta, cls).__init__(name, bases, dct)
 
 
