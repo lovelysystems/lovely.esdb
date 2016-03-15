@@ -73,16 +73,16 @@ class Bulk(object):
     def _store_update(self, doc):
         """Update an existing document
         """
-        data = doc._get_store_update_body()
-        if not data:
-            # no changes
+        changes = doc._get_store_update_doc()
+        if not changes:
+            # no changes no action
             return
         self.actions.append(
             self._get_action_base(
                 'update',
                 doc,
                 _retry_on_conflict=5,
-                **data
+                doc=changes
             )
         )
 

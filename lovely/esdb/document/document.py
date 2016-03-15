@@ -251,10 +251,13 @@ class Document(object):
         return self._values.source_for_index(update_source=True)
 
     def _store_update(self, **update_kwargs):
-        body = self._get_store_update_body()
-        if not body:
+        doc = self._get_store_update_doc()
+        if not doc:
             # no changes found
             return None
+        body = {
+            "doc": doc
+        }
         doc_id = self.get_primary_key()
         return self._get_es().update(
                     index=self._meta['_index'],
@@ -264,12 +267,10 @@ class Document(object):
                     **update_kwargs
                 )
 
-    def _get_store_update_body(self):
+    def _get_store_update_doc(self):
         self._apply_properties()
         self.get_primary_key()
-        return {
-            "doc": self._values.source_for_update(update_source=True)
-        }
+        return self._values.source_for_update(update_source=True)
 
     def _get_update_or_create_body(self, properties=None):
         self._apply_properties()
