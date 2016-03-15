@@ -20,13 +20,13 @@ class DocumentMeta(type):
         # register the document class
         global DOCUMENTREGISTRY
         if cls.INDEX and cls.DOC_TYPE:
-            key = cls.index_type_name()
-            if name in DOCUMENTREGISTRY[key]:
+            cls.INDEX_TYPE_NAME = cls.INDEX + "." + cls.DOC_TYPE
+            if name in DOCUMENTREGISTRY[cls.INDEX_TYPE_NAME]:
                 raise NameError(
                     'Duplicate document name "%s" for index type "%s"' %
-                    (name, key)
+                    (name, cls.INDEX_TYPE_NAME)
                 )
-            DOCUMENTREGISTRY[key][name] = cls
+            DOCUMENTREGISTRY[cls.INDEX_TYPE_NAME][name] = cls
             # on all Properties set the name to the class property name if no
             # name was provided for the property
             for name, prop in dct.iteritems():
@@ -82,15 +82,11 @@ class Document(object):
         "_source" property.
         """
         class_name = raw.get('_source', {}).get('db_class_')
-        klass = DOCUMENTREGISTRY[cls.index_type_name()].get(class_name, cls)
+        klass = DOCUMENTREGISTRY[cls.INDEX_TYPE_NAME].get(class_name, cls)
         obj = klass()
         obj._source = raw['_source']
         obj._update_meta(raw['_id'], raw.get('_version'))
         return obj
-
-    @classmethod
-    def index_type_name(cls):
-        return "%s.%s" % (cls.INDEX or "", cls.DOC_TYPE or "")
 
     def index(self, **index_args):
         """Write the current object to elasticsearch

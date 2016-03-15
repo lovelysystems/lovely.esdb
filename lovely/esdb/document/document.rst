@@ -408,7 +408,7 @@ defining a different index::
 The Registry contains one entry for each class per table::
 
     >>> from lovely.esdb.document import document
-    >>> document.DOCUMENTREGISTRY[MyOtherDoc.index_type_name()]
+    >>> document.DOCUMENTREGISTRY[MyOtherDoc.INDEX_TYPE_NAME]
     {'MyOtherDoc': <class 'MyOtherDoc'>, 'MyDocument': <class 'MyDocument'>}
 
 Another class with the same class name for the same table will cause an error::
