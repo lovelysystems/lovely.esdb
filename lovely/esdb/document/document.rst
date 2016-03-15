@@ -227,7 +227,7 @@ all available properties with possible defaults::
 
     >>> notLoadedDoc.get_update_body()
     {'doc': {'id': u'1', 'name': 'not loaded'},
-     'upsert': {'pw': None, 'title': u'', 'id': u'1', 'name': 'not loaded'}}
+     'upsert': {'pw': None, 'title': u'', 'id': u'1', 'name': 'not loaded', 'db_class_': 'MyDocument'}}
 
     >>> _ = notLoadedDoc.update()
 
@@ -408,7 +408,7 @@ defining a different index::
 The Registry contains one entry for each class per table::
 
     >>> from lovely.esdb.document import document
-    >>> document.DocumentRegistry[MyOtherDoc.INDEX]
+    >>> document.DOCUMENTREGISTRY[MyOtherDoc.index_type_name()]
     {'MyOtherDoc': <class 'MyOtherDoc'>, 'MyDocument': <class 'MyDocument'>}
 
 Another class with the same class name for the same table will cause an error::
@@ -416,23 +416,23 @@ Another class with the same class name for the same table will cause an error::
     >>> class MyOtherDoc(MyDocument):
     ...     pass
     Traceback (most recent call last):
-    NameError: Duplicate document name "MyOtherDoc" for index "mydocument"
+    NameError: Duplicate document name "MyOtherDoc" for index type "mydocument.default"
 
 If such a document is saved to the database the internally used field
-`_db_class` is written to the document::
+`db_class_` is written to the document::
 
     >>> myOtherDoc = MyOtherDoc(id='other-1')
-    >>> '_db_class' in myOtherDoc._source
+    >>> 'db_class_' in myOtherDoc._source
     False
 
     >>> _ = myOtherDoc.index()
 
-    >>> myOtherDoc._source['_db_class']
+    >>> myOtherDoc._source['db_class_']
     'MyOtherDoc'
 
 This field is not returned by the method `get_source`::
 
-    >>> '_db_class' in myOtherDoc.get_source()
+    >>> 'db_class_' in myOtherDoc.get_source()
     False
 
 After writing the document to the database the document could be loaded
@@ -445,16 +445,16 @@ again::
 
 It doesn't matter which base class is used to load the document because the
 class to instantiate the object is determined by a lookup in the
-document registry with the index and the value of `_db_class` as keys::
+document registry with the index and the value of `db_class_` as keys::
 
     >>> MyDocument.get('other-1').__class__ == MyOtherDoc
     True
 
-If a stored object does contain the field `_db_class` then the called class is
+If a stored object does contain the field `db_class_` then the called class is
 used for instantiation::
 
     >>> _source = myOtherDoc.get_source()
-    >>> '_db_class' in _source
+    >>> 'db_class_' in _source
     False
 
     >>> _ = MyOtherDoc.ES.index(
