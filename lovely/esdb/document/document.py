@@ -296,7 +296,6 @@ class Document(object):
         for (name, prop) in self._properties():
             getattr(self, name)
         res = self._values.source_for_index()
-        res['db_class_'] = self.__class__.__name__
         return res
 
     def _prepare_values(self, **kwargs):
@@ -367,6 +366,7 @@ class DocumentValueManager(object):
         source.update(self.default)
         source.update(self.source)
         source.update(self.changed)
+        source['db_class_'] = self.doc.__class__.__name__
         if update_source:
             self.source = source
             self.changed = {}

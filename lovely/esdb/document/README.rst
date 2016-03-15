@@ -103,7 +103,11 @@ and `_default` is reset.
 Create the source for indexing::
 
     >>> pprint(manager.source_for_index(update_source=False))
-    {'a': 'changed', 'b': 'default', 'c': 'source', 'o': 'changed'}
+    {'a': 'changed',
+     'b': 'default',
+     'c': 'source',
+     'db_class_': 'NoneType',
+     'o': 'changed'}
 
 
 Updating a Document

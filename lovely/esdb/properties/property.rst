@@ -91,8 +91,8 @@ the database::
 
 The stored value has been manipulated by the custom setter::
 
-    >>> doc._values.source
-    {u'id': u'1', u'title': u'AGAIN FOO BAR'}
+    >>> pprint(doc._values.source)
+    {u'db_class_': u'SetterGetterDoc', u'id': u'1', u'title': u'AGAIN FOO BAR'}
 
 The getter is called whenever a property is accessed for reading by dotted
 notation::

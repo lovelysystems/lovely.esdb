@@ -100,8 +100,14 @@ Now the document is no longer a new document::
 
 The values are all copied to the source::
 
-    >>> doc._values.source, doc._values.changed, doc._values.default
-    ({'id': u'1', 'pw': None, 'name': u'', 'title': u''}, {}, {})
+    >>> pprint((doc._values.source, doc._values.changed, doc._values.default))
+    ({'db_class_': 'MyDocument',
+      'id': u'1',
+      'name': u'',
+      'pw': None,
+      'title': u''},
+     {},
+     {})
 
 The document can be retrieved using the primary key::
 
@@ -122,21 +128,33 @@ but it is not the same instance::
 Modify a document and store it::
 
     >>> doc.title = 'modified'
-    >>> doc._values.source, doc._values.changed, doc._values.default
-    ({'id': u'1', 'pw': None, 'name': u'', 'title': u''}, {'title': 'modified'}, {})
+    >>> pprint((doc._values.source, doc._values.changed, doc._values.default))
+    ({'db_class_': 'MyDocument',
+      'id': u'1',
+      'name': u'',
+      'pw': None,
+      'title': u''},
+     {'title': 'modified'},
+     {})
 
     >>> doc.store()
     {u'_type': u'default', u'_id': u'1', u'_version': 2, u'_index': u'mydocument'}
 
-    >>> doc._values.source, doc._values.changed, doc._values.default
-    ({'id': u'1', 'pw': None, 'name': u'', 'title': 'modified'}, {}, {})
+    >>> pprint((doc._values.source, doc._values.changed, doc._values.default))
+    ({'db_class_': 'MyDocument',
+      'id': u'1',
+      'name': u'',
+      'pw': None,
+      'title': 'modified'},
+     {},
+     {})
 
     >>> retrieved_doc = MyDocument.get(doc.primary_key)
     >>> retrieved_doc.title
     u'modified'
 
 
-Get a  SingleDocument
+Get a Single Document
 =====================
 
 Remember the the current id::
@@ -150,8 +168,14 @@ Get the document::
     <MyDocument [id=u'1', title=u'modified', name=u'', password=None]>
     >>> doc._meta
     {'_type': 'default', '_id': u'1', '_version': 2, '_index': 'mydocument'}
-    >>> doc._values.source, doc._values.changed, doc._values.default
-    ({u'title': u'modified', u'id': u'1', u'name': u'', u'pw': None}, {}, {})
+    >>> pprint((doc._values.source, doc._values.changed, doc._values.default))
+    ({u'db_class_': u'MyDocument',
+      u'id': u'1',
+      u'name': u'',
+      u'pw': None,
+      u'title': u'modified'},
+     {},
+     {})
 
 current id has not changed because the get used the id from the database::
 
@@ -405,6 +429,11 @@ defining a different index::
     >>> MyOtherDoc.INDEX == MyDocument.INDEX
     True
 
+A document gets an index type name for the internal registry::
+
+    >>> MyOtherDoc.INDEX_TYPE_NAME
+    'mydocument.default'
+
 The Registry contains one entry for each class per table::
 
     >>> from lovely.esdb.document import document
@@ -422,23 +451,16 @@ If such a document is saved to the database the internally used field
 `db_class_` is written to the document::
 
     >>> myOtherDoc = MyOtherDoc(id='other-1')
-    >>> 'db_class_' in myOtherDoc._source
-    False
+    >>> myOtherDoc._values.get('db_class_')
+    Traceback (most recent call last):
+    KeyError: 'db_class_'
 
-    >>> _ = myOtherDoc.index()
-
-    >>> myOtherDoc._source['db_class_']
+    >>> _ = myOtherDoc.store(refresh=True)
+    >>> myOtherDoc._values.get('db_class_')
     'MyOtherDoc'
-
-This field is not returned by the method `get_source`::
-
-    >>> 'db_class_' in myOtherDoc.get_source()
-    False
 
 After writing the document to the database the document could be loaded
 again::
-
-    >>> _ = MyOtherDoc.refresh()
 
     >>> MyOtherDoc.get('other-1').__class__ == MyOtherDoc
     True
@@ -450,20 +472,19 @@ document registry with the index and the value of `db_class_` as keys::
     >>> MyDocument.get('other-1').__class__ == MyOtherDoc
     True
 
-If a stored object does contain the field `db_class_` then the called class is
-used for instantiation::
+If a stored object does not contain the field `db_class_` then the called
+class is used for instantiation::
 
-    >>> _source = myOtherDoc.get_source()
-    >>> 'db_class_' in _source
-    False
+    >>> source = myOtherDoc._values.source_for_index()
+    >>> del source['db_class_']
 
     >>> _ = MyOtherDoc.ES.index(
     ...             index=MyOtherDoc.INDEX,
     ...             doc_type=MyOtherDoc.DOC_TYPE,
     ...             id='other-2',
-    ...             body=_source
+    ...             body=source,
+    ...             refresh=True,
     ...         )
-    >>> _ = MyOtherDoc.refresh()
 
     >>> MyDocument.get('other-2').__class__ == MyDocument
     True
