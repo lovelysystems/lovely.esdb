@@ -6,8 +6,15 @@ esdb Document Handling
 Property Data Handling
 ======================
 
-_source
--------
+Property values are handled in the PropertyValueManager which provides some
+mappings to manage the values.
+
+A document holfs the instance property _values which is an instance of a
+PropertyValueManager. Properties manage their values inside this manager and
+are allowed to access `_values` on the document.
+
+_values.source
+--------------
 
 Is the copy of the currently known content in the database. It is not
 neccessarily an exact copy of the current data. The content of `_source` is
@@ -15,23 +22,23 @@ meant to be read only for properties. It is set when a document is read from
 the database and updated after storing/updating the document.
 
 
-_changed
---------
+_values.changed
+---------------
 
 Like `_source` but contains only the modified properties. Properties write
 into `_changed`.
 
 
-_default
---------
+_values.default
+---------------
 
 Contains all properties for which a new default value has been created. This
 happens when a property is read and there is no value in `_changed` and in
 `_source`.
 
 
-_property_cache
----------------
+_values.property_cache
+----------------------
 
 Properties can store cached values here. This is needed for complex data which
 needs transformation between the database and the python representation. Such
@@ -47,10 +54,10 @@ property.
 
 Lookup order::
 
-    1. _property_cache
-    2. _changed
-    3. _source
-    4. _default
+    1. _values.property_cache
+    2. _values.changed
+    3. _values.source
+    4. _values.default
 
 A source lookup happens in the `_transform_from_source`.
 The default implementation of the `Property` class is doing the lookup in the
@@ -93,9 +100,9 @@ A newly in memory created document has an empty `_source`.
 To build the JSON source, which is needed to be able to index a document, the
 following lookup is done::
 
-    1. _changed
-    2. _source
-    3. _default
+    1. _values.changed
+    2. _values.source
+    3. _values.default
 
 After the document is stored `_source` is set to the JSON source. `_changed`
 and `_default` is reset.
@@ -117,8 +124,8 @@ If there is an already stored document only the changed properties need to be
 changed. The JSON source for the document update is created using the
 following lookup::
 
-    1. _changed
-    2. _default
+    1. _values.changed
+    2. _values.default
 
 After the document is stored `_source` is updated with the JSON source.
 `_changed` and `_default` is reset.
