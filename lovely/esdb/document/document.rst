@@ -2,6 +2,16 @@
 Elasticsearch Documents
 =======================
 
+A test helper::
+
+    >>> def showDocumentValues(doc):
+    ...     pprint({
+    ...         "source": doc._values.source,
+    ...         "changed": doc._values.changed,
+    ...         "default": doc._values.default,
+    ...     })
+
+
 Implement A Document
 ====================
 
@@ -78,8 +88,10 @@ All values are set as defaults::
 
     >>> doc
     <MyDocument [id=u'1', title=u'', name=u'', password=None]>
-    >>> doc._values.source, doc._values.changed, doc._values.default
-    ({}, {}, {'pw': None, 'id': u'1', 'name': u'', 'title': u''})
+    >>> showDocumentValues(doc)
+    {'changed': {},
+     'default': {'id': u'1', 'name': u'', 'pw': None, 'title': u''},
+     'source': {}}
 
 
 Store a Document
@@ -100,14 +112,14 @@ Now the document is no longer a new document::
 
 The values are all copied to the source::
 
-    >>> pprint((doc._values.source, doc._values.changed, doc._values.default))
-    ({'db_class_': 'MyDocument',
-      'id': u'1',
-      'name': u'',
-      'pw': None,
-      'title': u''},
-     {},
-     {})
+    >>> showDocumentValues(doc)
+    {'changed': {},
+     'default': {},
+     'source': {'db_class_': 'MyDocument',
+                'id': u'1',
+                'name': u'',
+                'pw': None,
+                'title': u''}}
 
 The document can be retrieved using the primary key::
 
@@ -128,26 +140,26 @@ but it is not the same instance::
 Modify a document and store it::
 
     >>> doc.title = 'modified'
-    >>> pprint((doc._values.source, doc._values.changed, doc._values.default))
-    ({'db_class_': 'MyDocument',
-      'id': u'1',
-      'name': u'',
-      'pw': None,
-      'title': u''},
-     {'title': 'modified'},
-     {})
+    >>> showDocumentValues(doc)
+    {'changed': {'title': 'modified'},
+     'default': {},
+     'source': {'db_class_': 'MyDocument',
+                'id': u'1',
+                'name': u'',
+                'pw': None,
+                'title': u''}}
 
     >>> doc.store()
     {u'_type': u'default', u'_id': u'1', u'_version': 2, u'_index': u'mydocument'}
 
-    >>> pprint((doc._values.source, doc._values.changed, doc._values.default))
-    ({'db_class_': 'MyDocument',
-      'id': u'1',
-      'name': u'',
-      'pw': None,
-      'title': 'modified'},
-     {},
-     {})
+    >>> showDocumentValues(doc)
+    {'changed': {},
+     'default': {},
+     'source': {'db_class_': 'MyDocument',
+                'id': u'1',
+                'name': u'',
+                'pw': None,
+                'title': 'modified'}}
 
     >>> retrieved_doc = MyDocument.get(doc.primary_key)
     >>> retrieved_doc.title
@@ -168,14 +180,14 @@ Get the document::
     <MyDocument [id=u'1', title=u'modified', name=u'', password=None]>
     >>> doc._meta
     {'_type': 'default', '_id': u'1', '_version': 2, '_index': 'mydocument'}
-    >>> pprint((doc._values.source, doc._values.changed, doc._values.default))
-    ({u'db_class_': u'MyDocument',
-      u'id': u'1',
-      u'name': u'',
-      u'pw': None,
-      u'title': u'modified'},
-     {},
-     {})
+    >>> showDocumentValues(doc)
+    {'changed': {},
+     'default': {},
+     'source': {u'db_class_': u'MyDocument',
+                u'id': u'1',
+                u'name': u'',
+                u'pw': None,
+                u'title': u'modified'}}
 
 current id has not changed because the get used the id from the database::
 
