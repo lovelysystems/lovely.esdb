@@ -11,6 +11,7 @@ execfile(os.path.join(os.path.dirname(__file__),
 requires = [
     'gevent',
     'elasticsearch',
+    'jsonpickle',
 ]
 
 setup(
@@ -23,7 +24,9 @@ setup(
     extras_require=dict(
           test=[
               'collective.xmltestreport',
+              'pytz',
               'crate',
+              'requests',
               'lovely.testlayers',
           ],
     ),

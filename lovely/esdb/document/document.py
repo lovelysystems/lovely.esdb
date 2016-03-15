@@ -3,7 +3,7 @@ from collections import defaultdict
 
 import elasticsearch.exceptions
 
-from .property import Property
+from ..properties import Property
 
 
 DOCUMENTREGISTRY = defaultdict(dict)
@@ -42,7 +42,7 @@ class DocumentMeta(type):
 
 
 class Document(object):
-    """Representation of an elasticsearch document as python Object
+    """Representation of an elasticsearch document as python object
     """
 
     __metaclass__ = DocumentMeta
@@ -51,11 +51,11 @@ class Document(object):
 
     INDEX = None
     DOC_TYPE = 'default'
-    ROUTING = None
 
-    _source = None
+    RESERVED_PROPERTIES = set(['_primary_key_property'])
+
+    _values = None
     _meta = None
-    _update_properties = None
     _primary_key_property = None
 
     def __init__(self, **kwargs):
@@ -65,13 +65,9 @@ class Document(object):
         if self.DOC_TYPE is None:
             raise ValueError("No DOC_TYPE Provided for class %s!" % (
                                 self.__class__.__name__))
-        if 'update_properties' in kwargs:
-            self._update_properties = kwargs.pop('update_properties')
-        else:
-            self._update_properties = [name for name, p in self._properties()]
-        self._source = {}
+        self._values = DocumentValueManager(self)
         self._meta = {}
-        self._prepare_source(**kwargs)
+        self._prepare_values(**kwargs)
         self._update_meta()
 
     @classmethod
@@ -84,65 +80,54 @@ class Document(object):
         class_name = raw.get('_source', {}).get('db_class_')
         klass = DOCUMENTREGISTRY[cls.INDEX_TYPE_NAME].get(class_name, cls)
         obj = klass()
-        obj._source = raw['_source']
+        obj._values.source = raw['_source']
         obj._update_meta(raw['_id'], raw.get('_version'))
         return obj
 
-    def index(self, **index_args):
-        """Write the current object to elasticsearch
-        """
-        body = self.get_index_body()
-        return self._get_es().index(
-                    index=self._meta['_index'],
-                    doc_type=self._meta['_type'],
-                    id=self._meta['_id'],
-                    body=body,
-                    **index_args
-                )
+    def store(self, **index_update_kwargs):
+        """Store the doucument
 
-    def get_index_body(self):
-        self._apply_defaults()
-        return self._source
+        If this is an existing document an update is done otherwise index is
+        used to store the document.
+        """
+        if self.is_new():
+            return self._store_index(**index_update_kwargs)
+        else:
+            return self._store_update(**index_update_kwargs)
 
     def delete(self, **delete_args):
         """Delete an object from elasticsearch
         """
+        if self.is_new():
+            # document has never been stored
+            return
         return self._get_es().delete(
                     index=self._meta['_index'],
                     doc_type=self._meta['_type'],
-                    id=self._meta['_id'],
+                    id=self.get_primary_key(),
                     **delete_args
                 )
 
-    def update(self, properties=None, **update_args):
-        """Store the updated document in elasticsearch
+    def update_or_create(self, properties=None, **update_kwargs):
+        """Update or create the document in elasticsearch
 
         This will create a new or update an existing document.
 
         If this is an existing document only the properties defined in
         "update_properties" are updated.
+
+        Special handling for the update:
+            ...
         """
-        body = self.get_update_body(properties)
+        body = self._get_update_or_create_body(properties)
+        doc_id = self.get_primary_key()
         return self._get_es().update(
                     index=self._meta['_index'],
                     doc_type=self._meta['_type'],
-                    id=self._meta['_id'],
+                    id=doc_id,
                     body=body,
-                    **update_args
+                    **update_kwargs
                 )
-
-    def get_update_body(self, properties=None):
-        update_values = {}
-
-        if properties is None:
-            properties = self._update_properties
-        for (name, prop) in self._properties():
-            if name in properties and prop.name in self._source:
-                update_values[prop.name] = self._source[prop.name]
-        return {
-            "doc": update_values,
-            "upsert": self._get_source_with_defaults()
-        }
 
     @classmethod
     def get(cls, id):
@@ -207,18 +192,13 @@ class Document(object):
         """
         return cls._get_es().indices.refresh(index=cls.INDEX, **refresh_args)
 
-    def get_source(self):
-        """This method returns all initialised properties of the instance.
+    def is_new(self):
+        """checks if this is a `new` document
 
-        If a property has not been initialised yet it's not provided.
-        Initialising may happen via keywords in the constructor or via
-        setters.
+        A `new` document is a document which was not loaded from the database
+        and was never stored.
         """
-        res = {}
-        for name, prop in self._properties():
-            if prop.name in self._source:
-                res[name] = self._source[prop.name]
-        return res
+        return self._meta.get('_id') is None
 
     @property
     def primary_key(self):
@@ -226,31 +206,122 @@ class Document(object):
             raise AttributeError("No primary key column defined")
         return self._primary_key_property
 
+    def get_primary_key(self, set_after_read=False):
+        """Provides the primary key
+
+        First it looks up `_id` in the meta data and if it is not set the
+        primary key property must provide the id.
+
+        set_after_read updates the id in the meta data if it was not already
+        set.
+
+        raises AttributeError if no primary key is defined
+        """
+        if self._meta.get('_id') is not None:
+            return self._meta.get('_id')
+        value = self.primary_key
+        if value and set_after_read:
+            self._meta['_id'] = value
+        return value
+
+    def _store_index(self, **index_kwargs):
+        """Write the current object to elasticsearch
+        """
+        body = self._get_store_index_body()
+        doc_id = self.get_primary_key()
+        return self._get_es().index(
+                    index=self._meta['_index'],
+                    doc_type=self._meta['_type'],
+                    id=doc_id,
+                    body=body,
+                    **index_kwargs
+                )
+
+    def _get_store_index_body(self):
+        """Create the body data needed to index a document
+
+        This method is also used in the bulk implementation.
+        """
+        self._apply_properties()
+        self._apply_defaults()
+        # get_primary_key is called to make sure the id is copied to the
+        # metadata because from now on the document is no longer a new
+        # document.
+        self.get_primary_key(set_after_read=True)
+        return self._values.source_for_index(update_source=True)
+
+    def _store_update(self, **update_kwargs):
+        body = self._get_store_update_body()
+        if not body:
+            # no changes found
+            return None
+        doc_id = self.get_primary_key()
+        return self._get_es().update(
+                    index=self._meta['_index'],
+                    doc_type=self._meta['_type'],
+                    id=doc_id,
+                    body=body,
+                    **update_kwargs
+                )
+
+    def _get_store_update_body(self):
+        self._apply_properties()
+        self.get_primary_key()
+        return {
+            "doc": self._values.source_for_update(update_source=True)
+        }
+
+    def _get_update_or_create_body(self, properties=None):
+        self._apply_properties()
+        self.get_primary_key()
+        values = self._values.changed
+        if properties is not None:
+            filtered = {}
+            for name in properties:
+                if hasattr(self.__class__, name):
+                    prop = getattr(self.__class__, name)
+                    filtered[prop.name] = values[prop.name]
+            values = filtered
+        return {
+            "doc": values,
+            "upsert": self._get_source_with_defaults()
+        }
+
     def _get_source_with_defaults(self):
         """Return a dict representation of this document
 
         *All* properties are included. If one property hasn't been initialised
         yet the properties default value will be used.
         """
-        res = {'db_class_': self.__class__.__name__}
         for (name, prop) in self._properties():
-            res[prop.name] = getattr(self, name)
+            getattr(self, name)
+        res = self._values.source_for_index()
+        res['db_class_'] = self.__class__.__name__
         return res
 
-    def _prepare_source(self, **kwargs):
+    def _prepare_values(self, **kwargs):
         for (name, prop) in self._properties():
-            if prop.name in kwargs:
-                setattr(self, name, kwargs[prop.name])
+            if name in kwargs:
+                setattr(self, name, kwargs[name])
+
+    def _apply_properties(self):
+        """call _apply on all properties
+
+        calls _apply on all properties to give the properties a chance to
+        update _source. This is needed for properties such as the
+        PickleProperty which handles an object reference.
+        """
+        for (name, prop) in self._properties():
+            prop._apply(self)
 
     def _apply_defaults(self):
-        """Apply default values to properties not contained in the source
+        """Apply default values for all missing properties
         """
-        self._source['db_class_'] = self.__class__.__name__
+        source = self._values.source_for_index()
         for (name, prop) in self._properties():
-            if prop.name not in self._source:
-                # reading the property will return the default - and set that
-                # value
-                setattr(self, name, getattr(self, name))
+            if prop.name not in source:
+                # reading the property will set the default
+                getattr(self, name)
 
     def _update_meta(self, _id=None, _version=None, **kwargs):
         if self._meta is None:
@@ -267,12 +338,85 @@ class Document(object):
         """
         def isProperty(obj):
             return isinstance(obj, Property)
-        for prop in inspect.getmembers(self.__class__, isProperty):
-            if prop[0] != '_primary_key_property':
-                yield prop
+        for (name, prop) in inspect.getmembers(self.__class__, isProperty):
+            if name not in self.RESERVED_PROPERTIES:
+                yield (name, prop)
 
     @classmethod
     def _get_es(cls):
         if cls.ES is None:
             raise ValueError('No ES client is set on class %s' % cls.__name__)
         return cls.ES
+
+
+class DocumentValueManager(object):
+    """Manages the stores for the property values
+    """
+
+    def __init__(self, doc):
+        self.doc = doc
+        self.source = {}
+        self.changed = {}
+        self.default = {}
+        self.property_cache = {}
+
+    def source_for_index(self, update_source=True):
+        """Build the source which contains all properties for indexing
+        """
+        source = {}
+        source.update(self.default)
+        source.update(self.source)
+        source.update(self.changed)
+        if update_source:
+            self.source = source
+            self.changed = {}
+            self.default = {}
+            self.properties = {}
+        return source
+
+    def source_for_update(self, update_source=True):
+        """Build the source for updating
+
+        Will only contain changed properties and new defaults.
+        """
+        source = {}
+        source.update(self.default)
+        source.update(self.changed)
+        if update_source:
+            self.source.update(source)
+            self.changed = {}
+            self.default = {}
+            self.properties = {}
+        return source
+
+    def get(self, name):
+        """Provide the value for a property
+
+        name must be the name which is used in the database not in the python
+        class.
+        """
+        if name in self.property_cache:
+            return self.property_cache[name]
+        if name in self.changed:
+            return self.changed[name]
+        if name in self.source:
+            return self.source[name]
+        return self.default[name]
+
+    def exists(self, name):
+        """Tests if the value for a property is defined
+        """
+        return (name in self.property_cache
+                or name in self.changed
+                or name in self.source
+                or name in self.default)
+
+    def delete(self, name):
+        if name in self.property_cache:
+            del self.property_cache[name]
+        if name in self.changed:
+            del self.changed[name]
+        if name in self.source:
+            del self.source[name]
+        if name in self.default:
+            del self.default[name]

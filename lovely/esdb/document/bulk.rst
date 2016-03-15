@@ -3,9 +3,9 @@ Elasticsearch Bulk Actions
 ==========================
 
 A Bulk object can do different actions within one request. Allowed bulk
-actions are `index`, `update` and `delete`. Different actions can be mixed in
-one bulk request. Different types of documents can also be mixed in one bulk
-request.
+actions are `store`, `delete` and `update_or_create`. Different actions can be
+mixed in one bulk request. Different types of documents can also be mixed in
+one bulk request.
 
 The Bulk class accepts various kwargs while initialisation which will be
 passed to the bulk implementation of the elasticsearch client. For details see
@@ -13,7 +13,8 @@ the docs http://elasticsearch-py.readthedocs.org/en/master/helpers.html
 
 Test Setup::
 
-    >>> from lovely.esdb.document import Document, Property
+    >>> from lovely.esdb.document import Document
+    >>> from lovely.esdb.properties import Property
 
     >>> currentId = 0
     >>> def get_my_id():
@@ -63,10 +64,10 @@ Indexing documents::
     >>> obj2 = MyObj(title="Two")
     >>> obj3 = MyObj(title="Three")
     >>> obj4 = MyOtherObj(title="Four")
-    >>> b.index(obj1)
-    >>> b.index(obj2)
-    >>> b.index(obj3)
-    >>> b.index(obj4)
+    >>> b.store(obj1)
+    >>> b.store(obj2)
+    >>> b.store(obj3)
+    >>> b.store(obj4)
     >>> b.flush()
     (4, [])
 
@@ -98,8 +99,8 @@ Updating documents::
 
     >>> obj1.title = "updated 1"
     >>> obj2.title = "updated 2"
-    >>> b.update(obj1)
-    >>> b.update(obj2)
+    >>> b.store(obj1)
+    >>> b.store(obj2)
     >>> b.flush()
     (2, [])
 
@@ -107,30 +108,6 @@ Updating documents::
     u'updated 1'
     >>> MyObj.get(obj2.id).title
     u'updated 2'
-
-Updating only specific porperties::
-
-    >>> name_before_update = obj1.name
-    >>> obj1.name = u'Hupsi'
-    >>> obj1.title = "updated 1 with props"
-
-    >>> b.update(obj1, properties=['title'])
-    >>> b.flush()
-    (1, [])
-
-    >>> MyObj.get(obj1.id).title
-    u'updated 1 with props'
-    >>> MyObj.get(obj1.id).name == name_before_update
-    True
-
-For conflict resolution the update method supports the keyword argument
-`retry_on_conflict` which accepts an integer value indicating how ofter
-elasticsearch will retry to update the document in case of a version conflict.
-The default value is set to 5::
-
-    >>> b.update(obj1, retry_on_conflict=3)
-    >>> b.flush()
-    (1, [])
 
 Deleting documents::
 
@@ -148,9 +125,9 @@ Deleting documents::
 Mixed actions::
 
     >>> obj5 = MyObj(title="Five")
-    >>> b.index(obj5)
+    >>> b.store(obj5)
     >>> obj3.title = "updated 3"
-    >>> b.update(obj3)
+    >>> b.store(obj3)
     >>> b.delete(obj4)
     >>> b.flush()
     (3, [])
@@ -188,8 +165,8 @@ Mixed Documents::
 
     >>> objA = MyObj(title="Title")
     >>> objB = MySecondObj(name="Hansi")
-    >>> b.index(objA)
-    >>> b.index(objB)
+    >>> b.store(objA)
+    >>> b.store(objB)
     >>> b.flush()
     (2, [])
 

@@ -2,6 +2,7 @@ import os
 import unittest
 import doctest
 import requests
+from pprint import pprint
 
 from crate.testing.layer import CrateLayer
 from elasticsearch import Elasticsearch
@@ -37,6 +38,7 @@ crate_layer = CrateLayer('crate',
 
 
 def setUp(test):
+    test.globs['pprint'] = pprint
     delete_crate_indexes()
     test.globs['es_client'] = Elasticsearch(['localhost:%s' % crate_port])
     wait_for_cluster()
@@ -85,7 +87,10 @@ def create_suite(testfile,
 
 def test_suite():
     return unittest.TestSuite((
-        create_suite('document/property.rst'),
+        create_suite('document/README.rst'),
         create_suite('document/document.rst'),
         create_suite('document/bulk.rst'),
+
+        create_suite('properties/property.rst'),
+        create_suite('properties/objectproperty.rst'),
     ))
