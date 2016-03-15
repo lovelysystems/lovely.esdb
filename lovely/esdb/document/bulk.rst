@@ -175,3 +175,30 @@ Mixed Documents::
 
     >>> MySecondObj.get(objB.key).name
     u'Hansi'
+
+
+Update or Create Partly defined Documents
+=========================================
+
+Modify an existing document without loading it first::
+
+    >>> partA = MyObj(id=obj5.id, name="partA")
+    >>> b.update_or_create(partA)
+
+Create a new document for which it is not clear if it already exsits::
+
+    >>> partB = MyObj(id='partB', name="partB")
+    >>> b.update_or_create(partB)
+
+    >>> b.flush()
+    (2, [])
+
+The updated document::
+
+    >>> pprint(MyObj.get(obj5.id)._values.source)
+    {u'db_class_': u'MyObj', u'id': u'5', u'name': u'partA', u'title': u'Five'}
+
+The new document::
+
+    >>> pprint(MyObj.get('partB')._values.source)
+    {u'db_class_': u'MyObj', u'id': u'partB', u'name': u'partB', u'title': u''}
