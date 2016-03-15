@@ -226,6 +226,9 @@ class Document(object):
 
     def _store_index(self, **index_kwargs):
         """Write the current object to elasticsearch
+
+        Used in the `store` method if this is a new document.
+        After calling this method the document is no longer a new document.
         """
         body = self._get_store_index_body()
         doc_id = self.get_primary_key()
@@ -251,6 +254,8 @@ class Document(object):
         return self._values.source_for_index(update_source=True)
 
     def _store_update(self, **update_kwargs):
+        """Update the document if there are changes
+        """
         doc = self._get_store_update_doc()
         if not doc:
             # no changes found
@@ -268,11 +273,24 @@ class Document(object):
                 )
 
     def _get_store_update_doc(self):
+        """Create the update document
+
+        The result is a dict containing all the changed properties.
+        If the result is an emtpy dict no update is needed.
+
+        This method is also used in the bulk implementation.
+        """
         self._apply_properties()
         self.get_primary_key()
         return self._values.source_for_update(update_source=True)
 
     def _get_update_or_create_body(self, properties=None):
+        """Create the update/upsert body
+
+        Used in update_or_create to update a partly created document.
+
+        This method is also used in the bulk implementation.
+        """
         self._apply_properties()
         self.get_primary_key()
         values = self._values.changed
@@ -351,6 +369,9 @@ class Document(object):
 
 class DocumentValueManager(object):
     """Manages the stores for the property values
+
+    A manager instance is used by the properties of a document to manage the
+    values.
     """
 
     def __init__(self, doc):
@@ -413,6 +434,8 @@ class DocumentValueManager(object):
                 or name in self.default)
 
     def delete(self, name):
+        """Delete the value from all stores
+        """
         if name in self.property_cache:
             del self.property_cache[name]
         if name in self.changed:
