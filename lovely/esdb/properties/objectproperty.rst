@@ -85,6 +85,19 @@ Object Property Encoding/Decoding
 Objects
 -------
 
+The ObjectProperty uses the jsonpickle module to store and retrieve the data.
+An object is stored ar the raw jsonpickle string in the `jsonpickle_`
+property.
+
+There are some limitations:
+
+    - currently class properties do not show up in the encoded object, only
+      properties which are in obj.__dict__ show up
+    - properties modified outside the application are not recognized when the
+      object is decoded
+
+Some tests showing how endoce/decode works::
+
     >>> from lovely.esdb.properties import objectproperty
 
     >>> o1 = PickleDummy()
