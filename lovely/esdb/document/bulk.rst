@@ -45,6 +45,9 @@ Test Setup::
     ...     })
     {u'acknowledged': True}
 
+    >>> class MyOtherObj(MyObj):
+    ...     pass
+
 Create a Bulk object::
 
     >>> from lovely.esdb.document.bulk import Bulk
@@ -59,7 +62,7 @@ Indexing documents::
     >>> obj1 = MyObj(title="One", name="Hansi")
     >>> obj2 = MyObj(title="Two")
     >>> obj3 = MyObj(title="Three")
-    >>> obj4 = MyObj(title="Four")
+    >>> obj4 = MyOtherObj(title="Four")
     >>> b.index(obj1)
     >>> b.index(obj2)
     >>> b.index(obj3)
@@ -75,6 +78,13 @@ Indexing documents::
     u'Three'
     >>> MyObj.get(obj4.id).title
     u'Four'
+
+The indexed object `obj4` is of type MyOtherObj inherited from class MyObj.
+These two classes are using the same index. The class to use is store in the
+document while indexing an object even using bulk operations::
+
+    >>> type(MyObj.get(obj4.id)) == MyOtherObj
+    True
 
 Once flushed, no more action are contained by the Bulk object hence a further
 flush nothing do::

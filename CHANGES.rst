@@ -5,6 +5,8 @@ Changes for lovely.esdb
 unreleased
 ==========
 
+ - added support for multiple classes using the same document index
+
 2016/03/04 0.1.3
 ================
 
@@ -34,7 +36,7 @@ unreleased
 ================
 
  - Document.search now returns the full ES response
-   Note: this is a backward incompatibiliy.
+   Note: this is a backward incompatibility.
 
 2015/12/02 0.0.7
 ================
@@ -51,7 +53,7 @@ unreleased
 2015/11/22 0.0.5
 ================
 
- - added more functionallity to the Document class:
+ - added more functionality to the Document class:
    - count
    - refresh
 

@@ -1,11 +1,12 @@
 import inspect
+from collections import defaultdict
 
 import elasticsearch.exceptions
 
 from .property import Property
 
 
-DocumentRegistry = {}
+DocumentRegistry = defaultdict(dict)
 
 
 class DocumentMeta(type):
@@ -18,9 +19,10 @@ class DocumentMeta(type):
     def __init__(cls, name, bases, dct):
         # register the document class
         global DocumentRegistry
-        if name in DocumentRegistry:
-            raise NameError('Duplicate document name: %s' % name)
-        DocumentRegistry[name] = cls
+        if name in DocumentRegistry[cls.INDEX]:
+            raise NameError('Duplicate document name "%s" for index "%s"' %
+                            (name, cls.INDEX))
+        DocumentRegistry[cls.INDEX][name] = cls
         # on all Properties set the name to the class property name if no name
         # was provided for the property
         for name, prop in dct.iteritems():
@@ -75,7 +77,9 @@ class Document(object):
         raw must contain the data returned from ES which contains the
         "_source" property.
         """
-        obj = cls()
+        class_name = raw.get('_source', {}).get('_db_class')
+        klass = DocumentRegistry[cls.INDEX].get(class_name, cls)
+        obj = klass()
         obj._source = raw['_source']
         obj._update_meta(raw['_id'], raw.get('_version'))
         return obj
@@ -237,6 +241,7 @@ class Document(object):
     def _apply_defaults(self):
         """Apply default values to properties not contained in the source
         """
+        self._source['_db_class'] = self.__class__.__name__
         for (name, prop) in self._properties():
             if prop.name not in self._source:
                 # reading the property will return the default - and set that

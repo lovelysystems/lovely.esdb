@@ -393,6 +393,84 @@ If no primary key was defined one propery exception will be raised when
     AttributeError: No primary key column defined
 
 
+Document inheritance
+====================
+
+Documents might inherit from other document classes without the need of
+defining a different index::
+
+    >>> class MyOtherDoc(MyDocument):
+    ...     pass
+
+    >>> MyOtherDoc.INDEX == MyDocument.INDEX
+    True
+
+The Registry contains one entry for each class per table::
+
+    >>> from lovely.esdb.document import document
+    >>> document.DocumentRegistry[MyOtherDoc.INDEX]
+    {'MyOtherDoc': <class 'MyOtherDoc'>, 'MyDocument': <class 'MyDocument'>}
+
+Another class with the same class name for the same table will cause an error::
+
+    >>> class MyOtherDoc(MyDocument):
+    ...     pass
+    Traceback (most recent call last):
+    NameError: Duplicate document name "MyOtherDoc" for index "mydocument"
+
+If such a document is saved to the database the internally used field
+`_db_class` is written to the document::
+
+    >>> myOtherDoc = MyOtherDoc(id='other-1')
+    >>> '_db_class' in myOtherDoc._source
+    False
+
+    >>> _ = myOtherDoc.index()
+
+    >>> myOtherDoc._source['_db_class']
+    'MyOtherDoc'
+
+This field is not returned by the method `get_source`::
+
+    >>> '_db_class' in myOtherDoc.get_source()
+    False
+
+After writing the document to the database the document could be loaded
+again::
+
+    >>> _ = MyOtherDoc.refresh()
+
+    >>> MyOtherDoc.get('other-1').__class__ == MyOtherDoc
+    True
+
+It doesn't matter which base class is used to load the document because the
+class to instantiate the object is determined by a lookup in the
+document registry with the index and the value of `_db_class` as keys::
+
+    >>> MyDocument.get('other-1').__class__ == MyOtherDoc
+    True
+
+If a stored object does contain the field `_db_class` then the called class is
+used for instantiation::
+
+    >>> _source = myOtherDoc.get_source()
+    >>> '_db_class' in _source
+    False
+
+    >>> _ = MyOtherDoc.ES.index(
+    ...             index=MyOtherDoc.INDEX,
+    ...             doc_type=MyOtherDoc.DOC_TYPE,
+    ...             id='other-2',
+    ...             body=_source
+    ...         )
+    >>> _ = MyOtherDoc.refresh()
+
+    >>> MyDocument.get('other-2').__class__ == MyDocument
+    True
+    >>> MyOtherDoc.get('other-2').__class__ == MyOtherDoc
+    True
+
+
 Clean Up
 ========
 
