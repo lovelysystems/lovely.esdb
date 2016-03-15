@@ -80,7 +80,7 @@ Indexing documents::
     u'Four'
 
 The indexed object `obj4` is of type MyOtherObj inherited from class MyObj.
-These two classes are using the same index. The class to use is store in the
+These two classes are using the same index. The class to use is stored in the
 document while indexing an object even using bulk operations::
 
     >>> type(MyObj.get(obj4.id)) == MyOtherObj
