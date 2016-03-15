@@ -235,7 +235,7 @@ class Document(object):
         *All* properties are included. If one property hasn't been initialised
         yet the properties default value will be used.
         """
-        res = {}
+        res = {'db_class_': self.__class__.__name__}
         for (name, prop) in self._properties():
             res[prop.name] = getattr(self, name)
         return res
