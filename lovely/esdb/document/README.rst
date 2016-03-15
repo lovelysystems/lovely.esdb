@@ -9,7 +9,7 @@ Property Data Handling
 Property values are handled in the PropertyValueManager which provides some
 mappings to manage the values.
 
-A document holfs the instance property _values which is an instance of a
+A document holds the instance property _values which is an instance of a
 PropertyValueManager. Properties manage their values inside this manager and
 are allowed to access `_values` on the document.
 
