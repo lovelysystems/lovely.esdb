@@ -57,6 +57,7 @@ class Document(object):
 
     _values = None
     _meta = None
+    _update_properties = None
     _primary_key_property = None
 
     def __init__(self, **kwargs):
@@ -66,6 +67,8 @@ class Document(object):
         if self.DOC_TYPE is None:
             raise ValueError("No DOC_TYPE Provided for class %s!" % (
                                 self.__class__.__name__))
+        if 'update_properties' in kwargs:
+            self._update_properties = kwargs.pop('update_properties')
         self._values = DocumentValueManager(self)
         self._meta = {}
         self._prepare_values(**kwargs)
@@ -309,6 +312,9 @@ class Document(object):
         self._apply_properties()
         self.get_primary_key()
         values = self._values.changed
+        if properties is None:
+            # use the update properties defined for the instance
+            properties = self._update_properties
         if properties is not None:
             filtered = {}
             for name in properties:
