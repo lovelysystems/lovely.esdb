@@ -1,3 +1,4 @@
+import copy
 import inspect
 from collections import defaultdict
 
@@ -27,17 +28,17 @@ class DocumentMeta(type):
                     (name, cls.INDEX_TYPE_NAME)
                 )
             DOCUMENTREGISTRY[cls.INDEX_TYPE_NAME][name] = cls
-            # on all Properties set the name to the class property name if no
-            # name was provided for the property
-            for name, prop in dct.iteritems():
-                if isinstance(prop, Property) and prop.name is None:
-                    prop.name = name
-                    if prop.primary_key:
-                        if cls._primary_key_property is not None:
-                            raise AttributeError(
-                                "Multiple primary key properties."
-                            )
-                        cls._primary_key_property = prop
+        # on all Properties set the name to the class property name if no
+        # name was provided for the property
+        for name, prop in dct.iteritems():
+            if isinstance(prop, Property) and prop.name is None:
+                prop.name = name
+                if prop.primary_key:
+                    if cls._primary_key_property is not None:
+                        raise AttributeError(
+                            "Multiple primary key properties."
+                        )
+                    cls._primary_key_property = prop
         super(DocumentMeta, cls).__init__(name, bases, dct)
 
 
@@ -77,7 +78,7 @@ class Document(object):
         raw must contain the data returned from ES which contains the
         "_source" property.
         """
-        class_name = raw.get('_source', {}).get('db_class_')
+        class_name = raw.get('_source', {}).get('db_class__')
         klass = DOCUMENTREGISTRY[cls.INDEX_TYPE_NAME].get(class_name, cls)
         obj = klass()
         obj._values.source = raw['_source']
@@ -128,6 +129,52 @@ class Document(object):
                     body=body,
                     **update_kwargs
                 )
+
+    def is_new(self):
+        """checks if this is a `new` document
+
+        A `new` document is a document which was not loaded from the database
+        and was never stored.
+        """
+        return self._meta.get('_id') is None
+
+    @property
+    def primary_key(self):
+        """Provides the primary key as it is stored in the primary key property
+        """
+        if self._primary_key_property is None:
+            raise AttributeError('No primary key column defined for "%s"' % (
+                                                self.__class__.__name__))
+        return self._primary_key_property
+
+    def get_primary_key(self, set_after_read=False):
+        """Provides the primary key
+
+        First it looks up `_id` in the meta data and if it is not set the
+        primary key property must provide the id.
+
+        set_after_read updates the id in the meta data if it was not already
+        set.
+
+        raises AttributeError if no primary key is defined
+        """
+        if self._meta.get('_id') is not None:
+            return self._meta.get('_id')
+        value = self.primary_key
+        if value and set_after_read:
+            self._meta['_id'] = value
+        return value
+
+    def get_source(self, stripped=True):
+        """Provides the source of the document
+
+        This is more or less the representation of the document in database
+        and is therefore directly convertable using JSON.
+
+        If this is a partly defined document the returned content contains
+        only the known (already set) properties.
+        """
+        return self._values.raw_source(stripped)
 
     @classmethod
     def get(cls, id):
@@ -191,38 +238,6 @@ class Document(object):
         """Refresh the index for this document
         """
         return cls._get_es().indices.refresh(index=cls.INDEX, **refresh_args)
-
-    def is_new(self):
-        """checks if this is a `new` document
-
-        A `new` document is a document which was not loaded from the database
-        and was never stored.
-        """
-        return self._meta.get('_id') is None
-
-    @property
-    def primary_key(self):
-        if self._primary_key_property is None:
-            raise AttributeError("No primary key column defined")
-        return self._primary_key_property
-
-    def get_primary_key(self, set_after_read=False):
-        """Provides the primary key
-
-        First it looks up `_id` in the meta data and if it is not set the
-        primary key property must provide the id.
-
-        set_after_read updates the id in the meta data if it was not already
-        set.
-
-        raises AttributeError if no primary key is defined
-        """
-        if self._meta.get('_id') is not None:
-            return self._meta.get('_id')
-        value = self.primary_key
-        if value and set_after_read:
-            self._meta['_id'] = value
-        return value
 
     def _store_index(self, **index_kwargs):
         """Write the current object to elasticsearch
@@ -384,16 +399,14 @@ class DocumentValueManager(object):
     def source_for_index(self, update_source=True):
         """Build the source which contains all properties for indexing
         """
-        source = {}
-        source.update(self.default)
-        source.update(self.source)
-        source.update(self.changed)
-        source['db_class_'] = self.doc.__class__.__name__
+        source = copy.deepcopy(self.default)
+        source.update(copy.deepcopy(self.source))
+        source.update(copy.deepcopy(self.changed))
+        source['db_class__'] = self.doc.__class__.__name__
         if update_source:
-            self.source = source
+            self.source = copy.deepcopy(source)
             self.changed = {}
             self.default = {}
-            self.properties = {}
         return source
 
     def source_for_update(self, update_source=True):
@@ -401,14 +414,12 @@ class DocumentValueManager(object):
 
         Will only contain changed properties and new defaults.
         """
-        source = {}
-        source.update(self.default)
-        source.update(self.changed)
+        source = copy.deepcopy(self.default)
+        source.update(copy.deepcopy(self.changed))
         if update_source:
-            self.source.update(source)
+            self.source.update(copy.deepcopy(source))
             self.changed = {}
             self.default = {}
-            self.properties = {}
         return source
 
     def get(self, name):
@@ -444,3 +455,24 @@ class DocumentValueManager(object):
             del self.source[name]
         if name in self.default:
             del self.default[name]
+
+    def raw_source(self, stripped=True):
+        """Provides the current known source
+
+        It is a representation of the object in the database but the internal
+        metadata is stripped away.
+        """
+        source = self.source_for_index(update_source=False)
+        if stripped:
+            def strip(obj):
+                if isinstance(obj, dict):
+                    for k, v in list(obj.iteritems()):
+                        if k.endswith('__'):
+                            del obj[k]
+                        else:
+                            strip(v)
+                elif isinstance(obj, (list, tuple)):
+                    for v in obj:
+                        strip(v)
+            strip(source)
+        return source

@@ -93,6 +93,34 @@ The DocumentValueManager manages the different value storages::
     KeyError: 'unknown'
 
 
+Meta Data Properties
+====================
+
+If a property needs to use additonal `meta data` properties the meta data
+property name must end with `__`. This allows the `get_source` method of the
+document to automatically strip away these fields.
+
+The value manager can handle this::
+
+    >>> pprint(manager.source_for_index(update_source=False))
+    {'a': 'changed',
+     'b': 'default',
+     'c': 'source',
+     'db_class__': 'NoneType',
+     'o': 'changed'}
+    >>> pprint(manager.raw_source())
+    {'a': 'changed',
+     'b': 'default',
+     'c': 'source',
+     'o': 'changed'}
+    >>> pprint(manager.raw_source(stripped=False))
+    {'a': 'changed',
+     'b': 'default',
+     'c': 'source',
+     'db_class__': 'NoneType',
+     'o': 'changed'}
+
+
 Storing a New Document
 ======================
 
@@ -113,7 +141,7 @@ Create the source for indexing::
     {'a': 'changed',
      'b': 'default',
      'c': 'source',
-     'db_class_': 'NoneType',
+     'db_class__': 'NoneType',
      'o': 'changed'}
 
 

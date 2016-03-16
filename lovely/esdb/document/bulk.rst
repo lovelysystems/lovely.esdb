@@ -196,9 +196,9 @@ Create a new document for which it is not clear if it already exsits::
 The updated document::
 
     >>> pprint(MyObj.get(obj5.id)._values.source)
-    {u'db_class_': u'MyObj', u'id': u'5', u'name': u'partA', u'title': u'Five'}
+    {u'db_class__': u'MyObj', u'id': u'5', u'name': u'partA', u'title': u'Five'}
 
 The new document::
 
     >>> pprint(MyObj.get('partB')._values.source)
-    {u'db_class_': u'MyObj', u'id': u'partB', u'name': u'partB', u'title': u''}
+    {u'db_class__': u'MyObj', u'id': u'partB', u'name': u'partB', u'title': u''}

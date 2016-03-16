@@ -115,7 +115,7 @@ The values are all copied to the source::
     >>> showDocumentValues(doc)
     {'changed': {},
      'default': {},
-     'source': {'db_class_': 'MyDocument',
+     'source': {'db_class__': 'MyDocument',
                 'id': u'1',
                 'name': u'',
                 'pw': None,
@@ -143,7 +143,7 @@ Modify a document and store it::
     >>> showDocumentValues(doc)
     {'changed': {'title': 'modified'},
      'default': {},
-     'source': {'db_class_': 'MyDocument',
+     'source': {'db_class__': 'MyDocument',
                 'id': u'1',
                 'name': u'',
                 'pw': None,
@@ -155,7 +155,7 @@ Modify a document and store it::
     >>> showDocumentValues(doc)
     {'changed': {},
      'default': {},
-     'source': {'db_class_': 'MyDocument',
+     'source': {'db_class__': 'MyDocument',
                 'id': u'1',
                 'name': u'',
                 'pw': None,
@@ -183,7 +183,7 @@ Get the document::
     >>> showDocumentValues(doc)
     {'changed': {},
      'default': {},
-     'source': {u'db_class_': u'MyDocument',
+     'source': {u'db_class__': u'MyDocument',
                 u'id': u'1',
                 u'name': u'',
                 u'pw': None,
@@ -366,6 +366,25 @@ The exception can be avoided by using the ignore parameter::
     {u'found': False, u'_type': u'default', u'_id': u'...', u'_version': 4, u'_index': u'mydocument'}
 
 
+Access The Source Data
+======================
+
+The document can provide the underlying `source` data structure which is used
+to represent the document in the database. By default the returned structure
+contains no internal meta data.
+
+Get the source in the stripped version. This is a dict structure which can be
+used to directly convert it into a JSON string::
+
+    >>> pprint(doc.get_source())
+    {'id': u'3', 'name': u'', 'pw': None, 'title': u''}
+
+It is also possible to request an unstripped version::
+
+    >>> pprint(doc.get_source(stripped=False))
+    {'db_class__': 'MyDocument', 'id': u'3', 'name': u'', 'pw': None, 'title': u''}
+
+
 ES Client property
 ==================
 
@@ -426,7 +445,7 @@ If no primary key was defined one propery exception will be raised when
     >>> nokey = NoKeyDocument(id='1')
     >>> nokey.primary_key
     Traceback (most recent call last):
-    AttributeError: No primary key column defined
+    AttributeError: No primary key column defined for "NoKeyDocument"
 
 
 Document inheritance
@@ -460,15 +479,15 @@ Another class with the same class name for the same table will cause an error::
     NameError: Duplicate document name "MyOtherDoc" for index type "mydocument.default"
 
 If such a document is saved to the database the internally used field
-`db_class_` is written to the document::
+`db_class__` is written to the document::
 
     >>> myOtherDoc = MyOtherDoc(id='other-1')
-    >>> myOtherDoc._values.get('db_class_')
+    >>> myOtherDoc._values.get('db_class__')
     Traceback (most recent call last):
-    KeyError: 'db_class_'
+    KeyError: 'db_class__'
 
     >>> _ = myOtherDoc.store(refresh=True)
-    >>> myOtherDoc._values.get('db_class_')
+    >>> myOtherDoc._values.get('db_class__')
     'MyOtherDoc'
 
 After writing the document to the database the document could be loaded
@@ -479,16 +498,16 @@ again::
 
 It doesn't matter which base class is used to load the document because the
 class to instantiate the object is determined by a lookup in the
-document registry with the index and the value of `db_class_` as keys::
+document registry with the index and the value of `db_class__` as keys::
 
     >>> MyDocument.get('other-1').__class__ == MyOtherDoc
     True
 
-If a stored object does not contain the field `db_class_` then the called
+If a stored object does not contain the field `db_class__` then the called
 class is used for instantiation::
 
     >>> source = myOtherDoc._values.source_for_index()
-    >>> del source['db_class_']
+    >>> del source['db_class__']
 
     >>> _ = MyOtherDoc.ES.index(
     ...             index=MyOtherDoc.INDEX,
