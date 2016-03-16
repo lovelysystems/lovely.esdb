@@ -21,12 +21,11 @@ class Bulk(object):
     def store(self, doc):
         """Store a document using the bulk
 
-        The document will be correctly `indexed` or `updated`.
+        Index the document.
+        See also the comments for the Document.store about using the update
+        API.
         """
-        if doc.is_new():
-            self._store_index(doc)
-        else:
-            self._store_update(doc)
+        self._store_index(doc)
 
     def delete(self, doc):
         """Delete a document using the bulk

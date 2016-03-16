@@ -1,3 +1,6 @@
+import copy
+
+
 class Property(object):
     """A property to access data of a document
 
@@ -85,9 +88,19 @@ class Property(object):
         Subclasses can do data transformations of cached data and update
         `doc._source`.
 
+        Check if an object in `changed` is not different to the object in
+        `changed`. Remove the object from `changed` if it is equal to the one
+        in `source`.
         The default implementation does nothing
         """
-        pass
+        if (self.name in doc._values.changed
+            and self.name in doc._values.source
+            and (doc._values.changed[self.name]
+                 == doc._values.source[self.name])
+           ):
+            # an unchanged value is in changed, remove it
+            del doc._values.changed[self.name]
+            return
 
     def _transform_from_source(self, doc):
         """Provides the property based on the _source data
@@ -95,9 +108,18 @@ class Property(object):
         Subclasses can use this method the to data transformations between the
         representation in the database and the representation in python.
 
-        The default implementation just returns the current value based on
-        the values of the document.
+        Here we do some tricky things to make sure we can detect list and dict
+        changes. Because this method is always called when accessing the
+        property we copy a possibly existing object from source to changed if
+        it is a dict or list. If somthing is changed inside the dict or list
+        it will be detected in the `_apply` method.
         """
+        if (self.name not in doc._values.changed
+            and self.name in doc._values.source
+           ):
+            value = doc._values.source[self.name]
+            if isinstance(value, (list, tuple, dict)):
+                doc._values.changed[self.name] = copy.deepcopy(value)
         return doc._values.get(self.name)
 
     def _transform_to_source(self, doc, value):
@@ -108,4 +130,5 @@ class Property(object):
     def _set_default(self, doc):
         if self.name not in doc._values.default:
             value = self._setter(doc, self.default())
-            doc._values.default[self.name] = self._transform_to_source(doc, value)
+            doc._values.default[self.name] = \
+                self._transform_to_source(doc, value)

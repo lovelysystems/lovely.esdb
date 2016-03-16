@@ -369,20 +369,11 @@ The exception can be avoided by using the ignore parameter::
 Access The Source Data
 ======================
 
-The document can provide the underlying `source` data structure which is used
-to represent the document in the database. By default the returned structure
-contains no internal meta data.
-
-Get the source in the stripped version. This is a dict structure which can be
-used to directly convert it into a JSON string::
+The document can provide the `source` data structure which is just a dict
+containing all properties:
 
     >>> pprint(doc.get_source())
-    {'id': u'3', 'name': u'', 'pw': None, 'title': u''}
-
-It is also possible to request an unstripped version::
-
-    >>> pprint(doc.get_source(stripped=False))
-    {'db_class__': 'MyDocument', 'id': u'3', 'name': u'', 'pw': None, 'title': u''}
+    {'id': u'3', 'name': u'', 'password': None, 'title': u''}
 
 
 ES Client property

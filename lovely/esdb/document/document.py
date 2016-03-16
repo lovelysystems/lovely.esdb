@@ -89,15 +89,14 @@ class Document(object):
         return obj
 
     def store(self, **index_update_kwargs):
-        """Store the doucument
+        """Store the document
 
-        If this is an existing document an update is done otherwise index is
-        used to store the document.
+        Here it would be possible to optimze by using an update script.
+
+        Currently we always do a full index because the update API doesn't
+        allow to remove properties for dictionaries.
         """
-        if self.is_new():
-            return self._store_index(**index_update_kwargs)
-        else:
-            return self._store_update(**index_update_kwargs)
+        return self._store_index(**index_update_kwargs)
 
     def delete(self, **delete_args):
         """Delete an object from elasticsearch
@@ -168,16 +167,18 @@ class Document(object):
             self._meta['_id'] = value
         return value
 
-    def get_source(self, stripped=True):
-        """Provides the source of the document
+    def get_source(self):
+        """This method returns all initialised properties of the instance.
 
-        This is more or less the representation of the document in database
-        and is therefore directly convertable using JSON.
-
-        If this is a partly defined document the returned content contains
-        only the known (already set) properties.
+        If a property has not been initialised yet it's not provided.
+        Initialising may happen via keywords in the constructor or via
+        setters.
         """
-        return self._values.raw_source(stripped)
+        res = {}
+        for name, prop in self._properties():
+            if self._values.exists(prop.name):
+                res[name] = self._values.get(prop.name)
+        return res
 
     @classmethod
     def get(cls, id):
@@ -335,8 +336,7 @@ class Document(object):
         """
         for (name, prop) in self._properties():
             getattr(self, name)
-        res = self._values.source_for_index()
-        return res
+        return self._values.source_for_index()
 
     def _prepare_values(self, **kwargs):
         for (name, prop) in self._properties():
