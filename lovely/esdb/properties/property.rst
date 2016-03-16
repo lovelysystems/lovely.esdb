@@ -21,7 +21,8 @@ as getter or setter of one specific property.
 
 Example Document class::
 
-    >>> from lovely.esdb.document import Document, Property
+    >>> from lovely.esdb.document import Document
+    >>> from lovely.esdb.properties import Property
 
     >>> currentId = 0
     >>> def get_my_id():
@@ -46,6 +47,13 @@ Example Document class::
     ...     def get_title(self, value):
     ...         print "### get title"
     ...         return value.lower()
+    ...
+    ...     def __repr__(self):
+    ...         return '<%s [id=%r, title=%r]>' % (
+    ...                     self.__class__.__name__,
+    ...                     self.id,
+    ...                     self.title
+    ...                 )
 
     >>> _ = es_client.indices.create(
     ...     index=SetterGetterDoc.INDEX,
@@ -61,7 +69,7 @@ Example Document class::
     ...         }
     ...     })
 
-The setter as called whenever the docorated property will be written. This
+The setter is called whenever the decorated property will be written. This
 also includes initial writing while constructing an instance::
 
     >>> doc = SetterGetterDoc(title="Foo Bar")
@@ -70,16 +78,21 @@ also includes initial writing while constructing an instance::
     >>> doc.title = "Again Foo Bar"
     ### set title
 
+Internally the property is stored in uppercase::
+
+    >>> doc._values.changed
+    {'title': 'AGAIN FOO BAR'}
+
 But the setter will not be called when a stored document will be loaded from
 the database::
 
-    >>> _ = doc.index()
+    >>> _ = doc.store()
     >>> doc = SetterGetterDoc.get(doc.id)
 
-The stored value has been manipuleted by the custom setter::
+The stored value has been manipulated by the custom setter::
 
-    >>> doc.get_source()['title']
-    u'AGAIN FOO BAR'
+    >>> pprint(doc._values.source)
+    {u'db_class__': u'SetterGetterDoc', u'id': u'1', u'title': u'AGAIN FOO BAR'}
 
 The getter is called whenever a property is accessed for reading by dotted
 notation::

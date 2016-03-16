@@ -5,6 +5,10 @@ Changes for lovely.esdb
 unreleased
 ==========
 
+ - added ObjectProperty
+
+ - complete refactoring of the document class
+
  - added support for multiple classes using the same document index
 
 2016/03/04 0.1.3

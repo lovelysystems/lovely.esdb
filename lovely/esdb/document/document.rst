@@ -2,12 +2,23 @@
 Elasticsearch Documents
 =======================
 
+A test helper::
+
+    >>> def showDocumentValues(doc):
+    ...     pprint({
+    ...         "source": doc._values.source,
+    ...         "changed": doc._values.changed,
+    ...         "default": doc._values.default,
+    ...     })
+
+
 Implement A Document
 ====================
 
 Implement a document class::
 
-    >>> from lovely.esdb.document import Document, Property
+    >>> from lovely.esdb.document import Document
+    >>> from lovely.esdb.properties import Property
 
     >>> currentId = 0
     >>> def get_my_id():
@@ -29,6 +40,15 @@ Implement a document class::
     ...         """
     ...         )
     ...     password = Property(name="pw")
+    ...
+    ...     def __repr__(self):
+    ...         return '<%s [id=%r, title=%r, name=%r, password=%r]>' % (
+    ...                     self.__class__.__name__,
+    ...                     self.id,
+    ...                     self.title,
+    ...                     self.name,
+    ...                     self.password
+    ...                 )
 
     >>> MyDocument.name.doc
     '\n        Add any documentation string to a property.\n        '
@@ -58,101 +78,145 @@ Implement a document class::
     >>> doc.title
     u''
 
-Internal data. Only initialised properties exists in _source::
+A document is a new document if it was not loaded from the database and has
+never beed stored::
 
-    >>> from pprint import pprint
-    >>> pprint(doc.get_source())
-    {'id': u'1'}
-    >>> pprint(doc._meta)
-    {'_id': u'1', '_index': 'mydocument', '_type': 'default', '_version': None}
-    >>> sorted(doc._update_properties)
-    ['id', 'name', 'password', 'title']
+    >>> doc.is_new()
+    True
 
+All values are set as defaults::
 
-Get source
-==========
-
-The ``get_source`` method only returns properties which are initialised::
-
-    >>> doc2 = MyDocument()
-    >>> doc2.get_source()
-    {}
-
-Initialisation in constructor::
-
-    >>> doc3 = MyDocument(id=u'someid')
-    >>> doc3.get_source()
-    {'id': u'someid'}
-
-Initialisation via property setter::
-
-    >>> doc3.name = u'Günter'
-    >>> pprint(doc3.get_source())
-    {'id': u'someid', 'name': u'G\xfcnter'}
-
-Accessing a property which hasn't been initialised yet will lead return the
-properties default value::
-
-    >>> doc3.title
-    u''
-
-If a property getter is used, the default value is not initialised and hence
-not available on the source. ::
-
-    >>> pprint(doc3.get_source())
-    {'id': u'someid', 'name': u'G\xfcnter'}
+    >>> doc
+    <MyDocument [id=u'1', title=u'', name=u'', password=None]>
+    >>> showDocumentValues(doc)
+    {'changed': {},
+     'default': {'id': u'1', 'name': u'', 'pw': None, 'title': u''},
+     'source': {}}
 
 
-Save A Document
-===============
+Store a Document
+================
 
-To save a document use the "index" method::
+The store method stores our new index::
 
-    >>> doc.index()
+    >>> doc.store()
     {u'_type': u'default', u'_id': u'1', u'created': True, u'_version': 1, u'_index': u'mydocument'}
 
+    >>> doc
+    <MyDocument [id=u'1', title=u'', name=u'', password=None]>
 
-Get A Document From Elasticsearch
-=================================
+Now the document is no longer a new document::
+
+    >>> doc.is_new()
+    False
+
+The values are all copied to the source::
+
+    >>> showDocumentValues(doc)
+    {'changed': {},
+     'default': {},
+     'source': {'db_class__': 'MyDocument',
+                'id': u'1',
+                'name': u'',
+                'pw': None,
+                'title': u''}}
+
+The document can be retrieved using the primary key::
+
+    >>> retrieved_doc = MyDocument.get(doc.primary_key)
+    >>> retrieved_doc.id == doc.id
+    True
+
+The retrieved document has the same data::
+
+    >>> retrieved_doc
+    <MyDocument [id=u'1', title=u'', name=u'', password=None]>
+
+but it is not the same instance::
+
+    >>> retrieved_doc is doc
+    False
+
+Modify a document and store it::
+
+    >>> doc.title = 'modified'
+    >>> showDocumentValues(doc)
+    {'changed': {'title': 'modified'},
+     'default': {},
+     'source': {'db_class__': 'MyDocument',
+                'id': u'1',
+                'name': u'',
+                'pw': None,
+                'title': u''}}
+
+    >>> doc.store()
+    {u'_type': u'default', u'_id': u'1', u'_version': 2, u'_index': u'mydocument'}
+
+    >>> showDocumentValues(doc)
+    {'changed': {},
+     'default': {},
+     'source': {'db_class__': 'MyDocument',
+                'id': u'1',
+                'name': u'',
+                'pw': None,
+                'title': 'modified'}}
+
+    >>> retrieved_doc = MyDocument.get(doc.primary_key)
+    >>> retrieved_doc.title
+    u'modified'
+
+
+Get a Single Document
+=====================
+
+Remember the the current id::
 
     >>> prevId = currentId
 
 Get the document::
 
-    >>> myDoc = MyDocument.get(doc.id)
-    >>> pprint(myDoc.get_source())
-    {'id': u'1', 'name': u'', 'password': None, 'title': u''}
-    >>> myDoc._meta
-    {'_type': 'default', '_id': u'1', '_version': 1, '_index': 'mydocument'}
+    >>> doc = MyDocument.get(doc.id)
+    >>> doc
+    <MyDocument [id=u'1', title=u'modified', name=u'', password=None]>
+    >>> doc._meta
+    {'_type': 'default', '_id': u'1', '_version': 2, '_index': 'mydocument'}
+    >>> showDocumentValues(doc)
+    {'changed': {},
+     'default': {},
+     'source': {u'db_class__': u'MyDocument',
+                u'id': u'1',
+                u'name': u'',
+                u'pw': None,
+                u'title': u'modified'}}
 
-A get must not call the default() method for given properties::
+current id has not changed because the get used the id from the database::
 
     >>> currentId == prevId
     True
 
-Get multiple documents from elasticsearch
-=========================================
+
+Get Multiple Documents
+======================
 
 Create another document::
 
     >>> doc2 = MyDocument(title="A title", name="A Name")
-    >>> _ = doc2.index()
+    >>> _ = doc2.store()
     >>> prevId = currentId
 
 Get a list of documents::
 
     >>> res = MyDocument.mget(['1', doc2.id])
-    >>> print res
-    [<MyDocument object at 0x...>, <MyDocument object at 0x...>]
+    >>> pprint(res)
+    [<MyDocument [id=u'1', title=u'modified', name=u'', password=None]>,
+     <MyDocument [id=u'2', title=u'A title', name=u'A Name', password=None]>]
 
-The order is the same as the provided id list::
-
-    >>> print res[0].id
-    1
+The order in the result list is the same as in the parameter::
 
     >>> res = MyDocument.mget([doc2.id, '1'])
-    >>> print res[0].id == doc2.id
-    True
+    >>> pprint(res)
+    [<MyDocument [id=u'2', title=u'A title', name=u'A Name', password=None]>,
+     <MyDocument [id=u'1', title=u'modified', name=u'', password=None]>]
 
 A mget must not call the default() method for given properties::
 
@@ -161,8 +225,10 @@ A mget must not call the default() method for given properties::
 
 If one document is not found, ``None`` is returned at that index::
 
-    >>> MyDocument.mget(['1', doc2.id, 'unknown'])
-    [<MyDocument object at 0x...>, <MyDocument object at 0x...>, None]
+    >>> pprint(MyDocument.mget(['1', doc2.id, 'unknown']))
+    [<MyDocument [id=u'1', title=u'modified', name=u'', password=None]>,
+     <MyDocument [id=u'2', title=u'A title', name=u'A Name', password=None]>,
+     None]
 
     >>> MyDocument.mget([])
     []
@@ -190,84 +256,54 @@ Count with a query::
     1
 
 
-Update A Document
-=================
+Update or Create A Document
+===========================
 
-Update instead of "index" a document allows to only update specific
-properties::
+This is a special feature which must be used with care. It allows to update an
+existing document without reading it first. This means the instance created is
+not fully defined. A use case would be performance because it allows to update
+parts of a document without the need to read it first.
 
-    >>> myDoc.title = u'title'
-    >>> myDoc.name = u'name'
-    >>> myDoc.password = u'secret'
-    >>> myDoc.update(['title', 'password'])
-    {u'_type': u'default', u'_id': u'1', u'_version': 2, u'_index': u'mydocument'}
+Create an instance of a document with the id of an existing document::
 
-Only the title was changed in the database::
+    >>> original = MyDocument(id='original',
+    ...                       title='original title',
+    ...                       name='original name',
+    ...                       password='original password')
+    >>> _ = original.store()
 
-    >>> myDoc = MyDocument.get(doc.id)
-    >>> pprint(myDoc.get_source())
-    {'id': u'1', 'name': u'', 'password': u'secret', 'title': u'title'}
+    >>> updDoc = MyDocument(id='original', name='update or create')
+    >>> pprint((original, updDoc))
+    (<MyDocument [id='original', title='original title', name='original name', password='original password']>,
+     <MyDocument [id='original', title=u'', name='update or create', password=None]>)
 
-Set a value to None::
+Now it is possible to update the document::
 
-    >>> myDoc.name = None
-    >>> _ = myDoc.update(['name'])
-    >>> myDoc = MyDocument.get(myDoc.id)
-    >>> print myDoc.get_source()['name']
-    None
+    >>> _ = updDoc.update_or_create()
 
-Updating a document with an object *not* loaded from the database::
+The in memory object and the updated document do not contain the same data::
 
-    >>> notLoadedDoc = MyDocument(id=myDoc.id, name='not loaded')
-    >>> notLoadedDoc.get_source()
-    {'id': u'1', 'name': 'not loaded'}
+    >>> pprint((MyDocument.get('original'), updDoc))
+    (<MyDocument [id=u'original', title=u'original title', name=u'update or create', password=u'original password']>,
+     <MyDocument [id='original', title=u'', name='update or create', password=None]>)
 
-The update body will reflect the upcoming changes. Note: The `upsert` contains
-all available properties with possible defaults::
+If a document does not exist it will be created with the default values of the
+missing properties::
 
-    >>> notLoadedDoc.get_update_body()
-    {'doc': {'id': u'1', 'name': 'not loaded'},
-     'upsert': {'pw': None, 'title': u'', 'id': u'1', 'name': 'not loaded', 'db_class_': 'MyDocument'}}
+    >>> updDoc = MyDocument(id='newupd', name='update or create')
+    >>> _ = updDoc.update_or_create()
+    >>> pprint((MyDocument.get('newupd'), updDoc))
+    (<MyDocument [id=u'newupd', title=u'', name=u'update or create', password=None]>,
+     <MyDocument [id='newupd', title=u'', name='update or create', password=None]>)
 
-    >>> _ = notLoadedDoc.update()
+It is also possible to select which properties to update::
 
-    >>> notLoadedDoc.get_source()
-    {'id': u'1', 'name': 'not loaded'}
-
-Loading the updated object from the database will show only the property
-'name' has been updated::
-
-    >>> MyDocument.get(myDoc.id).get_source()
-    {'title': u'title', 'password': u'secret', 'id': u'1', 'name': u'not loaded'}
-
-
-Updating A Not Existing Document
-================================
-
-Create a new document and provide all parameters in the contructor::
-
-    >>> doc1 = MyDocument(id='newdoc', title='title 2', name='name 2')
-
-Update the document::
-
-    >>> doc1.update(['name'])
-    {u'_type': u'default', u'_id': u'newdoc', u'_version': 1, u'_index': u'mydocument'}
-
-Because the document is a new document it is fully written to elasticsearch::
-
-    >>> myDoc = MyDocument.get(doc1.id)
-    >>> pprint(myDoc.get_source())
-    {'id': u'newdoc', 'name': u'name 2', 'password': None, 'title': u'title 2'}
-
-Create a document with a default values (id)::
-
-    >>> nextId = currentId + 1
-    >>> doc3 = MyDocument(title='title 3', name='name 3')
-    >>> doc3.update(['name'])
-    {u'_type': u'default', u'_id': u'3', u'_version': 1, u'_index': u'mydocument'}
-    >>> myDoc = MyDocument.get(nextId)
-    >>> pprint(myDoc.get_source())
-    {'id': u'3', 'name': u'name 3', 'password': None, 'title': u'title 3'}
+    >>> updDoc.name = 'new upd name'
+    >>> updDoc.title = 'new upd title'
+    >>> _ = updDoc.update_or_create(['title'])
+    >>> pprint((MyDocument.get('newupd'), updDoc))
+    (<MyDocument [id=u'newupd', title=u'new upd title', name=u'update or create', password=None]>,
+     <MyDocument [id='newupd', title='new upd title', name='new upd name', password=None]>)
 
 
 Search
@@ -279,7 +315,7 @@ Refresh index and do a search query::
     >>> body = {
     ...     "query": {
     ...         "match": {
-    ...             "title": "title 2"
+    ...             "title": "new upd title"
     ...         }
     ...     }
     ... }
@@ -294,8 +330,8 @@ The hits are resolved to documents::
 
     >>> docs['hits']['hits']
     [<MyDocument ...]
-    >>> print docs['hits']['hits'][0].title
-    title 2
+    >>> docs['hits']['hits'][0].title
+    u'new upd title'
 
 Empty list is returned if nothing is found::
 
@@ -310,7 +346,7 @@ Delete
 Documents can be deleted::
 
     >>> doc = MyDocument()
-    >>> _ = doc.index()
+    >>> _ = doc.store()
     >>> MyDocument.get(doc.id) is not None
     True
     >>> doc.delete(refresh=True)
@@ -330,6 +366,16 @@ The exception can be avoided by using the ignore parameter::
     {u'found': False, u'_type': u'default', u'_id': u'...', u'_version': 4, u'_index': u'mydocument'}
 
 
+Access The Source Data
+======================
+
+The document can provide the `source` data structure which is just a dict
+containing all properties:
+
+    >>> pprint(doc.get_source())
+    {'id': u'3', 'name': u'', 'password': None, 'title': u''}
+
+
 ES Client property
 ==================
 
@@ -345,7 +391,7 @@ to fetch or store objects::
 Works on instance methods::
 
     >>> cld = ClientLessDocument(id='1')
-    >>> cld.index()
+    >>> cld.store()
     Traceback (most recent call last):
     ValueError: No ES client is set on class ClientLessDocument
 
@@ -390,7 +436,7 @@ If no primary key was defined one propery exception will be raised when
     >>> nokey = NoKeyDocument(id='1')
     >>> nokey.primary_key
     Traceback (most recent call last):
-    AttributeError: No primary key column defined
+    AttributeError: No primary key column defined for "NoKeyDocument"
 
 
 Document inheritance
@@ -404,6 +450,11 @@ defining a different index::
 
     >>> MyOtherDoc.INDEX == MyDocument.INDEX
     True
+
+A document gets an index type name for the internal registry::
+
+    >>> MyOtherDoc.INDEX_TYPE_NAME
+    'mydocument.default'
 
 The Registry contains one entry for each class per table::
 
@@ -419,51 +470,43 @@ Another class with the same class name for the same table will cause an error::
     NameError: Duplicate document name "MyOtherDoc" for index type "mydocument.default"
 
 If such a document is saved to the database the internally used field
-`db_class_` is written to the document::
+`db_class__` is written to the document::
 
     >>> myOtherDoc = MyOtherDoc(id='other-1')
-    >>> 'db_class_' in myOtherDoc._source
-    False
+    >>> myOtherDoc._values.get('db_class__')
+    Traceback (most recent call last):
+    KeyError: 'db_class__'
 
-    >>> _ = myOtherDoc.index()
-
-    >>> myOtherDoc._source['db_class_']
+    >>> _ = myOtherDoc.store(refresh=True)
+    >>> myOtherDoc._values.get('db_class__')
     'MyOtherDoc'
-
-This field is not returned by the method `get_source`::
-
-    >>> 'db_class_' in myOtherDoc.get_source()
-    False
 
 After writing the document to the database the document could be loaded
 again::
-
-    >>> _ = MyOtherDoc.refresh()
 
     >>> MyOtherDoc.get('other-1').__class__ == MyOtherDoc
     True
 
 It doesn't matter which base class is used to load the document because the
 class to instantiate the object is determined by a lookup in the
-document registry with the index and the value of `db_class_` as keys::
+document registry with the index and the value of `db_class__` as keys::
 
     >>> MyDocument.get('other-1').__class__ == MyOtherDoc
     True
 
-If a stored object does contain the field `db_class_` then the called class is
-used for instantiation::
+If a stored object does not contain the field `db_class__` then the called
+class is used for instantiation::
 
-    >>> _source = myOtherDoc.get_source()
-    >>> 'db_class_' in _source
-    False
+    >>> source = myOtherDoc._values.source_for_index()
+    >>> del source['db_class__']
 
     >>> _ = MyOtherDoc.ES.index(
     ...             index=MyOtherDoc.INDEX,
     ...             doc_type=MyOtherDoc.DOC_TYPE,
     ...             id='other-2',
-    ...             body=_source
+    ...             body=source,
+    ...             refresh=True,
     ...         )
-    >>> _ = MyOtherDoc.refresh()
 
     >>> MyDocument.get('other-2').__class__ == MyDocument
     True
