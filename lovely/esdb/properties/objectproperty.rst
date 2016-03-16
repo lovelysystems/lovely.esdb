@@ -13,7 +13,7 @@ Usage::
     >>> from lovely.esdb.properties import ObjectProperty, Property
     >>> from lovely.esdb.document import Document
     >>> class MyDoc(Document):
-    ...     INDEX = 'object_property_test'
+    ...     INDEX = 'object_json_pickle__test'
     ...     ES = es_client
     ...
     ...     id = Property(primary_key=True)
@@ -103,36 +103,36 @@ Some tests showing how endoce/decode works::
     >>> o1 = PickleDummy()
     >>> o1.p1 = 'p1'
     >>> pprint(objectproperty.encode(o1))
-    {'_pickle': '{"py/object": "lovely.esdb.properties.testing.PickleDummy", "p1": "p1"}',
+    {'object_json_pickle__': '{"py/object": "lovely.esdb.properties.testing.PickleDummy", "p1": "p1"}',
      u'p1': u'p1'}
 
     >>> o1.name = 'schlag'
     >>> pprint(objectproperty.encode(o1))
-    {'_pickle': '{"py/object": "lovely.esdb.properties.testing.PickleDummy", "p1": "p1", "name": "schlag"}',
-     u'name': u'schlag',
+    {u'name': u'schlag',
+     'object_json_pickle__': '{"py/object": "lovely.esdb.properties.testing.PickleDummy", "p1": "p1", "name": "schlag"}',
      u'p1': u'p1'}
 
     >>> def f():
     ...     pass
     >>> o1.f = f
     >>> pprint(objectproperty.encode(o1))
-    {'_pickle': '{"py/object": "lovely.esdb.properties.testing.PickleDummy", "p1": "p1", "name": "schlag", "f": {"py/function": "None.f"}}',
-     u'f': None,
+    {u'f': None,
      u'name': u'schlag',
+     'object_json_pickle__': '{"py/object": "lovely.esdb.properties.testing.PickleDummy", "p1": "p1", "name": "schlag", "f": {"py/function": "None.f"}}',
      u'p1': u'p1'}
 
     >>> o1.o = PickleDummy()
     >>> o1.o.d = 42
     >>> data = objectproperty.encode(o1)
     >>> pprint(data)
-    {'_pickle': '{"py/object": "lovely.esdb.properties.testing.PickleDummy", "p1": "p1", "name": "schlag", "o": {"py/object": "lovely.esdb.properties.testing.PickleDummy", "d": 42}, "f": {"py/function": "None.f"}}',
-     u'f': None,
+    {u'f': None,
      u'name': u'schlag',
      u'o': {u'd': 42},
+     'object_json_pickle__': '{"py/object": "lovely.esdb.properties.testing.PickleDummy", "p1": "p1", "name": "schlag", "o": {"py/object": "lovely.esdb.properties.testing.PickleDummy", "d": 42}, "f": {"py/function": "None.f"}}',
      u'p1': u'p1'}
 
     >>> import json
-    >>> pprint(json.loads(data['_pickle']))
+    >>> pprint(json.loads(data['object_json_pickle__']))
     {u'f': {u'py/function': u'None.f'},
      u'name': u'schlag',
      u'o': {u'd': 42, u'py/object': u'lovely.esdb.properties.testing.PickleDummy'},
@@ -152,8 +152,8 @@ Datetime without timezone::
     >>> o = PickleDummy()
     >>> o.dt = datetime(2016, 3, 14, 8, 50, 0, 0)
     >>> pprint(objectproperty.encode(o))
-    {'_pickle': '{"py/object": "lovely.esdb.properties.testing.PickleDummy", "dt": {"py/object": "datetime.datetime", "__reduce__": [{"py/type": "datetime.datetime"}, ["B+ADDggyAAAAAA=="]]}}',
-     u'dt': u'2016-03-14T08:50:00'}
+    {u'dt': u'2016-03-14T08:50:00',
+     'object_json_pickle__': '{"py/object": "lovely.esdb.properties.testing.PickleDummy", "dt": {"py/object": "datetime.datetime", "__reduce__": [{"py/type": "datetime.datetime"}, ["B+ADDggyAAAAAA=="]]}}'}
 
 Datetime with timezone::
 
@@ -161,8 +161,8 @@ Datetime with timezone::
     >>> o.dt = datetime(2016, 3, 14, 8, 50, tzinfo=pytz.utc
     ...                ).astimezone(pytz.timezone('Europe/Vienna'))
     >>> pprint(objectproperty.encode(o))
-    {'_pickle': '{"py/object": "lovely.esdb.properties.testing.PickleDummy", "dt": {"py/object": "datetime.datetime", "__reduce__": [{"py/type": "datetime.datetime"}, ["B+ADDgkyAAAAAA==", {"py/object": "pytz.tzfile.Europe/Vienna", "py/reduce": [{"py/function": "pytz._p"}, {"py/tuple": ["Europe/Vienna", 3600, 0, "CET"]}, null, null, null]}]]}}',
-     u'dt': u'2016-03-14T09:50:00+01:00'}
+    {u'dt': u'2016-03-14T09:50:00+01:00',
+     'object_json_pickle__': '{"py/object": "lovely.esdb.properties.testing.PickleDummy", "dt": {"py/object": "datetime.datetime", "__reduce__": [{"py/type": "datetime.datetime"}, ["B+ADDgkyAAAAAA==", {"py/object": "pytz.tzfile.Europe/Vienna", "py/reduce": [{"py/function": "pytz._p"}, {"py/tuple": ["Europe/Vienna", 3600, 0, "CET"]}, null, null, null]}]]}}'}
 
 
 Simple Types

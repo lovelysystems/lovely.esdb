@@ -42,15 +42,15 @@ def encode(obj):
                                 obj,
                                 unpicklable=False))
     pickle = jsonpickle.encode(obj)
-    raw['_pickle'] = pickle
+    raw['object_json_pickle__'] = pickle
     return raw
 
 
 def decode(data):
     if data is None:
         return None
-    if '_pickle' in data:
-        return jsonpickle.decode(data['_pickle'])
+    if 'object_json_pickle__' in data:
+        return jsonpickle.decode(data['object_json_pickle__'])
     return data
 
 
