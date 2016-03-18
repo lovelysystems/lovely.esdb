@@ -5,6 +5,8 @@ Changes for lovely.esdb
 unreleased
 ==========
 
+ - allow to set None on object properties
+
 2016/03/16 0.2.0
 ================
 

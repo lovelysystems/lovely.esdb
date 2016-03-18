@@ -38,6 +38,10 @@ class ObjectProperty(Property):
 
 
 def encode(obj):
+    """Build the object representation as JSON
+    """
+    if obj is None:
+        return None
     raw = json.loads(jsonpickle.encode(
                                 obj,
                                 unpicklable=False))
@@ -47,6 +51,8 @@ def encode(obj):
 
 
 def decode(data):
+    """Recreate a python object from JSON
+    """
     if data is None:
         return None
     if 'object_json_pickle__' in data:
