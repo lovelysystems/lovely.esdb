@@ -202,3 +202,30 @@ The new document::
 
     >>> pprint(MyObj.get('partB')._values.source)
     {u'db_class__': u'MyObj', u'id': u'partB', u'name': u'partB', u'title': u''}
+
+
+Bulk and Lazy Documents
+=======================
+
+Lazy documents can also be used with bulks::
+
+    >>> from lovely.esdb.document import LazyDocument
+    >>> o = LazyDocument(MyObj(id='lazybulk', name="lazy bulk name"))
+    >>> b.store(o)
+    >>> b.flush()
+    (1, [])
+    >>> pprint(MyObj.get('lazybulk')._values.source)
+    {u'db_class__': u'MyObj',
+     u'id': u'lazybulk',
+     u'name': u'lazy bulk name',
+     u'title': u''}
+
+    >>> o.title = 'new lazybulk title'
+    >>> b.store(o)
+    >>> b.flush()
+    (1, [])
+    >>> pprint(MyObj.get('lazybulk')._values.source)
+    {u'db_class__': u'MyObj',
+     u'id': u'lazybulk',
+     u'name': u'lazy bulk name',
+     u'title': u'new lazybulk title'}

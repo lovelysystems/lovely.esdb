@@ -3,10 +3,10 @@ Pickle Property
 ===============
 
 
-objectpropertckleProperty
-=========================
+ObjectProperty
+==============
 
-The pickle property can be used to store python object on a document.
+The object property can be used to store python object on a document.
 
 Usage::
 
@@ -58,8 +58,17 @@ The object property provides the correct instance::
     >>> stored_doc.o
     <PickleDummy [name='ll']>
 
+An object property can be set to None::
+
+    >>> doc.o = None
+    >>> _ = doc.store()
+    >>> stored_doc = MyDoc.get('1')
+    >>> stored_doc.o is None
+    True
+
+
 Changing an object which is already assigned to a document property must also
-be updated when indexing or updateing the database::
+be updated when indexing or updating the database::
 
     >>> doc = MyDoc(id='2')
     >>> doc.o = PickleDummy()

@@ -5,6 +5,12 @@ Changes for lovely.esdb
 unreleased
 ==========
 
+ - added lazy documents
+
+ - changed the way how the primary key property is handled in the document
+
+ - allow to set None on object properties
+
 2016/03/16 0.2.0
 ================
 
