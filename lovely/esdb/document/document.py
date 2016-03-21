@@ -34,11 +34,11 @@ class DocumentMeta(type):
             if isinstance(prop, Property) and prop.name is None:
                 prop.name = name
                 if prop.primary_key:
-                    if cls._primary_key_property is not None:
+                    if cls._primary_key_name is not None:
                         raise AttributeError(
                             "Multiple primary key properties."
                         )
-                    cls._primary_key_property = prop
+                    cls._primary_key_name = name
         super(DocumentMeta, cls).__init__(name, bases, dct)
 
 
@@ -53,12 +53,12 @@ class Document(object):
     INDEX = None
     DOC_TYPE = 'default'
 
-    RESERVED_PROPERTIES = set(['_primary_key_property'])
+    RESERVED_PROPERTIES = set(['_primary_key_name'])
 
     _values = None
     _meta = None
     _update_properties = None
-    _primary_key_property = None
+    _primary_key_name = None
 
     def __init__(self, **kwargs):
         if self.INDEX is None:
@@ -144,10 +144,10 @@ class Document(object):
     def primary_key(self):
         """Provides the primary key as it is stored in the primary key property
         """
-        if self._primary_key_property is None:
+        if self._primary_key_name is None:
             raise AttributeError('No primary key column defined for "%s"' % (
                                                 self.__class__.__name__))
-        return self._primary_key_property
+        return getattr(self, self._primary_key_name)
 
     def get_primary_key(self, set_after_read=False):
         """Provides the primary key
@@ -166,6 +166,10 @@ class Document(object):
         if value and set_after_read:
             self._meta['_id'] = value
         return value
+
+    @property
+    def primary_key_name(self):
+        return self.__class__._primary_key_name
 
     def get_source(self):
         """This method returns all initialised properties of the instance.

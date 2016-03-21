@@ -150,7 +150,7 @@ Modify a document and store it::
                 'title': u''}}
 
     >>> doc.store()
-    {u'_type': u'default', u'_id': u'1', u'_version': 2, u'_index': u'mydocument'}
+    {u'_type': u'default', u'_id': u'1', u'created': False, u'_version': 2, u'_index': u'mydocument'}
 
     >>> showDocumentValues(doc)
     {'changed': {},

@@ -19,7 +19,10 @@ class ObjectProperty(Property):
                 value = doc._values.get(self.name)
             except KeyError:
                 value = None
-            doc._values.property_cache[self.name] = decode(value)
+            if value is None:
+                doc._values.property_cache[self.name] = value
+            else:
+                doc._values.property_cache[self.name] = decode(value)
         return doc._values.property_cache[self.name]
 
     def _transform_to_source(self, doc, value):
@@ -33,8 +36,11 @@ class ObjectProperty(Property):
         return encode(value)
 
     def _apply(self, doc):
-        obj = doc._values.property_cache[self.name]
-        doc._values.changed[self.name] = encode(obj)
+        obj = doc._values.property_cache.get(self.name)
+        if obj is None:
+            doc._values.changed[self.name] = obj
+        else:
+            doc._values.changed[self.name] = encode(obj)
 
 
 def encode(obj):
