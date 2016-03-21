@@ -53,7 +53,7 @@ class Document(object):
     INDEX = None
     DOC_TYPE = 'default'
 
-    RESERVED_PROPERTIES = set(['_primary_key_name'])
+    RESERVED_PROPERTIES = set([])
 
     _values = None
     _meta = None
