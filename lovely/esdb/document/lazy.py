@@ -2,9 +2,10 @@ from .document import Document
 
 
 class LazyDocument(object):
-    """
-   Modified from
-     http://code.activestate.com/recipes/578014-lazy-load-object-proxying/
+    """Handle lazy loading of documents
+
+    Modified from
+       http://code.activestate.com/recipes/578014-lazy-load-object-proxying/
     """
     __slots__ = ["_doc_class",
                  "_doc_primary_key",
@@ -23,11 +24,17 @@ class LazyDocument(object):
         object.__setattr__(self, "_doc_ref", document)
 
     def _doc_resolver(self):
+        """Provides the referenced document
+
+        Returns the already loaded document or loads the document.
+        """
         return (object.__getattribute__(self, "_doc_ref")
                 or object.__getattribute__(self, "_doc_loader")()
                )
 
     def _doc_loader(self):
+        """Load a document based on the primary key
+        """
         pk = object.__getattribute__(self, "_doc_primary_key")
         doc = object.__getattribute__(self, "_doc_class").get(pk)
         object.__setattr__(self, "_doc_ref", doc)
@@ -41,12 +48,22 @@ class LazyDocument(object):
     # proxying (special cases)
     #
     def __getattribute__(self, name):
-        pk_name = getattr(object.__getattribute__(self, "_doc_class"),
-                          '_primary_key_name')
-        if name == pk_name:
-            pk = object.__getattribute__(self, "_doc_primary_key")
-            if pk is not None:
-                return pk
+        """Read an attribute from the document
+
+        Primary key handling:
+            if the document is not already loaded the primary key is provided
+            from the proxy instance instead of loading the document.
+        """
+        doc = object.__getattribute__(self, "_doc_ref")
+        if doc is None:
+            # the document is not loaded, if this is the primary key, provide
+            # it from self.
+            pk_name = getattr(object.__getattribute__(self, "_doc_class"),
+                              '_primary_key_name')
+            if name == pk_name:
+                pk = object.__getattribute__(self, "_doc_primary_key")
+                if pk is not None:
+                    return pk
         return getattr(object.__getattribute__(self, "_doc_resolver")(), name)
 
     def __delattr__(self, name):
@@ -136,6 +153,7 @@ class LazyDocument(object):
         else:
             theclass.__init__(ins, doc_cls, *args, **kwargs)
         return ins
+
 
 def remove_proxy(lazyDoc):
     return object.__getattribute__(lazyDoc, "_doc_resolver")()
