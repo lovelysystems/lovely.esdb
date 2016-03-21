@@ -5,6 +5,9 @@ Changes for lovely.esdb
 unreleased
 ==========
 
+2016/03/21 0.2.1
+================
+
  - added lazy documents
 
  - changed the way how the primary key property is handled in the document
