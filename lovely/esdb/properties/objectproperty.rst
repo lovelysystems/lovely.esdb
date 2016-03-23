@@ -152,17 +152,16 @@ Some tests showing how endoce/decode works::
 datetime objects
 ----------------
 
-jsonpickle provides the datetime object as `unicode(obj)` but we want to have
-it in ISO format.
-
-Datetime without timezone::
+Datetime without timezone (naive datetime)::
 
     >>> from datetime import datetime
     >>> o = PickleDummy()
     >>> o.dt = datetime(2016, 3, 14, 8, 50, 0, 0)
     >>> pprint(objectproperty.encode(o))
     {u'dt': u'2016-03-14T08:50:00',
-     'object_json_pickle__': '{"py/object": "lovely.esdb.properties.testing.PickleDummy", "dt": {"py/object": "datetime.datetime", "__reduce__": [{"py/type": "datetime.datetime"}, ["B+ADDggyAAAAAA=="]]}}'}
+     'object_json_pickle__': '{"py/object": "lovely.esdb.properties.testing.PickleDummy", "dt": {"py/object": "datetime.datetime", "__reduce__": [{"py/type": "datetime.datetime"}, "2016-03-14T08:50:00"]}}'}
+    >>> objectproperty.decode(objectproperty.encode(o)).dt
+    datetime.datetime(2016, 3, 14, 8, 50)
 
 Datetime with timezone::
 
@@ -171,7 +170,23 @@ Datetime with timezone::
     ...                ).astimezone(pytz.timezone('Europe/Vienna'))
     >>> pprint(objectproperty.encode(o))
     {u'dt': u'2016-03-14T09:50:00+01:00',
-     'object_json_pickle__': '{"py/object": "lovely.esdb.properties.testing.PickleDummy", "dt": {"py/object": "datetime.datetime", "__reduce__": [{"py/type": "datetime.datetime"}, ["B+ADDgkyAAAAAA==", {"py/object": "pytz.tzfile.Europe/Vienna", "py/reduce": [{"py/function": "pytz._p"}, {"py/tuple": ["Europe/Vienna", 3600, 0, "CET"]}, null, null, null]}]]}}'}
+     'object_json_pickle__': '{"py/object": "lovely.esdb.properties.testing.PickleDummy", "dt": {"py/object": "datetime.datetime", "__reduce__": [{"py/type": "datetime.datetime"}, "2016-03-14T09:50:00+01:00"]}}'}
+    >>> objectproperty.decode(objectproperty.encode(o)).dt
+    datetime.datetime(2016, 3, 14, 9, 50, tzinfo=tzoffset(None, 3600))
+
+
+date objects
+------------
+
+Date::
+
+    >>> from datetime import date
+    >>> o.dt = date(2016, 3, 23)
+    >>> pprint(objectproperty.encode(o))
+    {u'dt': u'2016-03-23',
+     'object_json_pickle__': '{"py/object": "lovely.esdb.properties.testing.PickleDummy", "dt": {"py/object": "datetime.date", "__reduce__": [{"py/type": "datetime.date"}, "2016-03-23"]}}'}
+    >>> objectproperty.decode(objectproperty.encode(o)).dt
+    datetime.date(2016, 3, 23)
 
 
 Simple Types

@@ -12,6 +12,7 @@ requires = [
     'gevent',
     'elasticsearch',
     'jsonpickle',
+    'python-dateutil',
 ]
 
 setup(
@@ -22,13 +23,13 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     extras_require=dict(
-          test=[
-              'collective.xmltestreport',
-              'pytz',
-              'crate',
-              'requests',
-              'lovely.testlayers',
-          ],
+        test=[
+            'collective.xmltestreport',
+            'pytz',
+            'crate',
+            'requests',
+            'lovely.testlayers',
+        ],
     ),
     zip_safe=False,
     install_requires=requires,
