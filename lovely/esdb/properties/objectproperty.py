@@ -1,5 +1,6 @@
 import json
-from datetime import datetime
+import dateutil.parser
+from datetime import datetime, date
 import jsonpickle
 from jsonpickle.tags import RESERVED
 
@@ -83,9 +84,28 @@ class ISODatetimeHandler(jsonpickle.handlers.DatetimeHandler):
     """
 
     def flatten(self, obj, data):
+        """Builds the flattend date or datetime
+        
+        The value will be stored as iso8601 formatted string.
+        """
         pickler = self.context
+        payload = obj.isoformat()
         if not pickler.unpicklable:
-            return obj.isoformat()
-        return super(ISODatetimeHandler, self).flatten(obj, data)
+            return payload
+        flatten = pickler.flatten
+        data['__reduce__'] = (flatten(obj.__class__, reset=False), payload)
+        return data
+
+    def restore(self, data):
+        cls, payload = data['__reduce__']
+        unpickler = self.context
+        restore = unpickler.restore
+        cls = restore(cls, reset=False)
+        value = dateutil.parser.parse(payload)
+        if cls is date:
+            # this was a date object
+            value = cls(value.year, value.month, value.day)
+        return value
 
 ISODatetimeHandler.handles(datetime)
+ISODatetimeHandler.handles(date)

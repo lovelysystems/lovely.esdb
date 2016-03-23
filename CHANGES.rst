@@ -5,6 +5,9 @@ Changes for lovely.esdb
 unreleased
 ==========
 
+ - json pickle datetime and date objects as iso8601 string
+   This fixes problems with the jsonpickle package.
+
 2016/03/21 0.2.1
 ================
 
