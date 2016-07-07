@@ -5,6 +5,8 @@ Changes for lovely.esdb
 unreleased
 ==========
 
+ - updated with readthedocs documentation
+
 2016/03/23 0.2.2
 ================
 

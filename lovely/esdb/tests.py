@@ -40,6 +40,7 @@ crate_layer = CrateLayer('crate',
 def setUp(test):
     test.globs['pprint'] = pprint
     delete_crate_indexes()
+    test.globs['crate_port'] = crate_port
     test.globs['es_client'] = Elasticsearch(['localhost:%s' % crate_port])
     wait_for_cluster()
 
@@ -94,4 +95,7 @@ def test_suite():
 
         create_suite('properties/property.rst'),
         create_suite('properties/objectproperty.rst'),
+
+        # the documentation
+        create_suite('../../docs/usage.rst'),
     ))

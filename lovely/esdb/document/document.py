@@ -44,6 +44,9 @@ class DocumentMeta(type):
 
 class Document(object):
     """Representation of an elasticsearch document as python object
+
+    A simple document class to provide ORM style access for elasticsearch
+    index data.
     """
 
     __metaclass__ = DocumentMeta
@@ -73,20 +76,6 @@ class Document(object):
         self._meta = {}
         self._prepare_values(**kwargs)
         self._update_meta()
-
-    @classmethod
-    def from_raw_es_data(cls, raw):
-        """Setup the document from raw elasticsearch data
-
-        raw must contain the data returned from ES which contains the
-        "_source" property.
-        """
-        class_name = raw.get('_source', {}).get('db_class__')
-        klass = DOCUMENTREGISTRY[cls.INDEX_TYPE_NAME].get(class_name, cls)
-        obj = klass()
-        obj._values.source = raw['_source']
-        obj._update_meta(raw['_id'], raw.get('_version'))
-        return obj
 
     def store(self, **index_update_kwargs):
         """Store the document
@@ -246,6 +235,20 @@ class Document(object):
         """Refresh the index for this document
         """
         return cls._get_es().indices.refresh(index=cls.INDEX, **refresh_args)
+
+    @classmethod
+    def from_raw_es_data(cls, raw):
+        """Setup the document from raw elasticsearch data
+
+        raw must contain the data returned from ES which contains the
+        "_source" property.
+        """
+        class_name = raw.get('_source', {}).get('db_class__')
+        klass = DOCUMENTREGISTRY[cls.INDEX_TYPE_NAME].get(class_name, cls)
+        obj = klass()
+        obj._values.source = raw['_source']
+        obj._update_meta(raw['_id'], raw.get('_version'))
+        return obj
 
     def _store_index(self, **index_kwargs):
         """Write the current object to elasticsearch
