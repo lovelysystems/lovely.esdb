@@ -5,6 +5,10 @@ Changes for lovely.esdb
 unreleased
 ==========
 
+2016/07/08 0.2.3
+================
+
+ - prepared for pypi
  - updated with readthedocs documentation
 
 2016/03/23 0.2.2
