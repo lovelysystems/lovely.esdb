@@ -1,6 +1,7 @@
 *.py[co]
 *.egg
 *.egg-info
+docs/html/
 bin/
 build/
 develop-eggs/

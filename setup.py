@@ -30,6 +30,9 @@ setup(
             'requests',
             'lovely.testlayers',
         ],
+        documentation=[
+            'sphinx',
+        ],
     ),
     zip_safe=False,
     install_requires=requires,

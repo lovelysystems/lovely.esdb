@@ -20,11 +20,16 @@ Implement a document class::
     >>> from lovely.esdb.document import Document
     >>> from lovely.esdb.properties import Property
 
+A generator to create unique ids::
+
     >>> currentId = 0
     >>> def get_my_id():
     ...     global currentId
     ...     currentId += 1
     ...     return unicode(currentId)
+
+A new document class derived from `Document`::
+
     >>> class MyDocument(Document):
     ...
     ...     INDEX = 'mydocument'
@@ -55,6 +60,8 @@ Implement a document class::
     >>> MyDocument.title.doc
     u''
 
+Create an index on which the document can be stored::
+
     >>> es_client.indices.create(
     ...     index=MyDocument.INDEX,
     ...     body={
@@ -72,7 +79,12 @@ Implement a document class::
     ...     })
     {u'acknowledged': True}
 
+Now a new document can be created::
+
     >>> doc = MyDocument()
+
+The id is set to the value which is returned from the id generator::
+
     >>> doc.id
     u'1'
     >>> doc.title
@@ -370,7 +382,7 @@ Access The Source Data
 ======================
 
 The document can provide the `source` data structure which is just a dict
-containing all properties:
+containing all properties::
 
     >>> pprint(doc.get_source())
     {'id': u'3', 'name': u'', 'password': None, 'title': u''}
