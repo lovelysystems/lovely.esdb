@@ -3,6 +3,7 @@
 *.egg-info
 docs/html/
 bin/
+dist/
 build/
 develop-eggs/
 parts/

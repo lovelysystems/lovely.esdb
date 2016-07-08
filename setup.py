@@ -18,8 +18,10 @@ requires = [
 setup(
     name='lovely.esdb',
     version=VERSION,
+    description="a simple elasticsearch document mapper",
     author='lovelysystems',
     author_email='office@lovelysystems.com',
+    url='http://lovelyesdb.readthedocs.io/en/latest/index.html',
     packages=find_packages(),
     include_package_data=True,
     extras_require=dict(
