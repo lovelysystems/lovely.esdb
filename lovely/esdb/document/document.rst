@@ -127,11 +127,7 @@ The values are all copied to the source::
     >>> showDocumentValues(doc)
     {'changed': {},
      'default': {},
-     'source': {'db_class__': 'MyDocument',
-                'id': u'1',
-                'name': u'',
-                'pw': None,
-                'title': u''}}
+     'source': {'id': u'1', 'name': u'', 'pw': None, 'title': u''}}
 
 The document can be retrieved using the primary key::
 
@@ -155,11 +151,7 @@ Modify a document and store it::
     >>> showDocumentValues(doc)
     {'changed': {'title': 'modified'},
      'default': {},
-     'source': {'db_class__': 'MyDocument',
-                'id': u'1',
-                'name': u'',
-                'pw': None,
-                'title': u''}}
+     'source': {'id': u'1', 'name': u'', 'pw': None, 'title': u''}}
 
     >>> doc.store()
     {u'_type': u'default', u'_id': u'1', u'created': False, u'_version': 2, u'_index': u'mydocument'}
@@ -167,11 +159,7 @@ Modify a document and store it::
     >>> showDocumentValues(doc)
     {'changed': {},
      'default': {},
-     'source': {'db_class__': 'MyDocument',
-                'id': u'1',
-                'name': u'',
-                'pw': None,
-                'title': 'modified'}}
+     'source': {'id': u'1', 'name': u'', 'pw': None, 'title': 'modified'}}
 
     >>> retrieved_doc = MyDocument.get(doc.primary_key)
     >>> retrieved_doc.title
@@ -195,11 +183,7 @@ Get the document::
     >>> showDocumentValues(doc)
     {'changed': {},
      'default': {},
-     'source': {u'db_class__': u'MyDocument',
-                u'id': u'1',
-                u'name': u'',
-                u'pw': None,
-                u'title': u'modified'}}
+     'source': {u'id': u'1', u'name': u'', u'pw': None, u'title': u'modified'}}
 
 current id has not changed because the get used the id from the database::
 
@@ -316,6 +300,29 @@ It is also possible to select which properties to update::
     >>> pprint((MyDocument.get('newupd'), updDoc))
     (<MyDocument [id=u'newupd', title=u'new upd title', name=u'update or create', password=None]>,
      <MyDocument [id='newupd', title='new upd title', name='new upd name', password=None]>)
+
+
+Get Documents By Property
+=========================
+
+Often it is needed to query for documents not using the primary key but using
+another single property. This can be done with the `get_by` class method::
+
+    >>> _ = MyDocument.refresh()
+    >>> pprint(MyDocument.get_by(MyDocument.name, 'update or create'))
+    [<MyDocument [id=u'original', title=u'original title', name=u'update or create', password=u'original password']>]
+
+    >>> pprint(MyDocument.get_by(MyDocument.title, 'new upd title'))
+    [<MyDocument [id=u'newupd', title=u'new upd title', name=u'update or create', password=None]>]
+
+It is also possible to provide a list as value::
+
+    >>> pprint(MyDocument.get_by(MyDocument.name,
+    ...                          ['update or create', 'new upd name'],
+    ...                          size=10
+    ...                         ))
+    [<MyDocument [id=u'original', title=u'original title', name=u'update or create', password=u'original password']>,
+     <MyDocument [id=u'newupd', title=u'new upd title', name=u'update or create', password=None]>]
 
 
 Search
@@ -458,10 +465,19 @@ Documents might inherit from other document classes without the need of
 defining a different index::
 
     >>> class MyOtherDoc(MyDocument):
-    ...     pass
+    ...     WITH_INHERITANCE = True
 
     >>> MyOtherDoc.INDEX == MyDocument.INDEX
     True
+
+.. note::
+
+    WITH_INHERITANCE must be set to True on all classes using the shared
+    index or better in the base class!
+
+Make the base class inheritable::
+
+    >>> MyDocument.WITH_INHERITANCE = True
 
 A document gets an index type name for the internal registry::
 

@@ -56,6 +56,8 @@ class Document(object):
     INDEX = None
     DOC_TYPE = 'default'
 
+    WITH_INHERITANCE = False
+
     RESERVED_PROPERTIES = set([])
 
     _values = None
@@ -197,6 +199,26 @@ class Document(object):
                                   body={'ids': ids},
                                  ).get('docs')
         return [d['found'] and cls.from_raw_es_data(d) or None for d in docs]
+
+    @classmethod
+    def get_by(cls, prop, value, offset=0, size=1):
+        """Get an object using a query on a specific property
+
+        prop must be one of the properties defined in the Document.
+        If value is a list type a terms query is used.
+        """
+        query_type = isinstance(value, (list, tuple)) and 'terms' or 'term'
+        body = {
+            "query": {
+                query_type: {
+                    prop.name: value
+                }
+            },
+            "size": size,
+            "from": offset,
+        }
+        hits = cls.search(body)
+        return hits['hits']['hits']
 
     @classmethod
     def search(cls, body, resolve_hits=True):
@@ -415,7 +437,8 @@ class DocumentValueManager(object):
         source = copy.deepcopy(self.default)
         source.update(copy.deepcopy(self.source))
         source.update(copy.deepcopy(self.changed))
-        source['db_class__'] = self.doc.__class__.__name__
+        if self.doc and self.doc.WITH_INHERITANCE:
+            source['db_class__'] = self.doc.__class__.__name__
         if update_source:
             self.source = copy.deepcopy(source)
             self.changed = {}
