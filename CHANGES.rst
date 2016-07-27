@@ -5,6 +5,9 @@ Changes for lovely.esdb
 unreleased
 ==========
 
+2016/07/27 0.3.0
+================
+
  - added Document.get_by to build simple terms queries
  - added WITH_INHERITANCE property for the Document class to enable/disable
    the use of the db_class__ property.
