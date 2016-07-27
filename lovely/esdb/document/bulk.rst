@@ -25,6 +25,7 @@ Test Setup::
     >>> class MyObj(Document):
     ...     INDEX = 'myobj'
     ...     ES = es_client
+    ...     WITH_INHERITANCE = True
     ...
     ...     id = Property(primary_key=True, default=get_my_id)
     ...     title = Property(default=u'')

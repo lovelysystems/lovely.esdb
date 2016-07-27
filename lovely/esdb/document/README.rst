@@ -74,7 +74,9 @@ Document Value Manager
 The DocumentValueManager manages the different value storages::
 
     >>> from lovely.esdb.document.document import DocumentValueManager
-    >>> manager = DocumentValueManager(None)
+    >>> class DummyDoc(object):
+    ...     WITH_INHERITANCE = False
+    >>> manager = DocumentValueManager(DummyDoc())
     >>> manager.source, manager.changed, manager.default, manager.property_cache
     ({}, {}, {}, {})
     >>> manager.changed['a'] = 'changed'
@@ -106,7 +108,6 @@ The value manager can handle this::
     {'a': 'changed',
      'b': 'default',
      'c': 'source',
-     'db_class__': 'NoneType',
      'o': 'changed'}
     >>> pprint(manager.raw_source())
     {'a': 'changed',
@@ -117,8 +118,20 @@ The value manager can handle this::
     {'a': 'changed',
      'b': 'default',
      'c': 'source',
-     'db_class__': 'NoneType',
      'o': 'changed'}
+
+The source for an interitable document also provides the property `db_class__`
+with the class name::
+
+    >>> DummyDoc.WITH_INHERITANCE = True
+    >>> pprint(manager.raw_source(stripped=False))
+    {'a': 'changed',
+     'b': 'default',
+     'c': 'source',
+     'db_class__': 'DummyDoc',
+     'o': 'changed'}
+
+    >>> DummyDoc.WITH_INHERITANCE = False
 
 
 Storing a New Document
@@ -141,7 +154,6 @@ Create the source for indexing::
     {'a': 'changed',
      'b': 'default',
      'c': 'source',
-     'db_class__': 'NoneType',
      'o': 'changed'}
 
 
