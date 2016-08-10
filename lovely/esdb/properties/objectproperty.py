@@ -37,15 +37,15 @@ class ObjectProperty(Property):
         return encode(value)
 
     def _apply(self, doc):
+        if self.name not in doc._values.property_cache:
+            # apply nothing if the property is not in the cache
+            return
         obj = doc._values.property_cache.get(self.name)
-        if obj is None:
-            doc._values.changed[self.name] = obj
-        else:
-            doc._values.changed[self.name] = encode(obj)
+        doc._values.changed[self.name] = obj is None and obj or encode(obj)
 
 
 def encode(obj):
-    """Build the object representation as JSON
+    """Build a JSON representation of the object
     """
     if obj is None:
         return None
@@ -85,7 +85,7 @@ class ISODatetimeHandler(jsonpickle.handlers.DatetimeHandler):
 
     def flatten(self, obj, data):
         """Builds the flattend date or datetime
-        
+
         The value will be stored as iso8601 formatted string.
         """
         pickler = self.context
