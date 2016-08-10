@@ -5,6 +5,9 @@ Changes for lovely.esdb
 unreleased
 ==========
 
+2016/08/10 0.3.1
+================
+
  - do not apply None for ObjectProperty if property not found
  - fixed document.get_source for ObjectProperty handling
 
