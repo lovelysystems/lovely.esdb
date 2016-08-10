@@ -392,7 +392,7 @@ The document can provide the `source` data structure which is just a dict
 containing all properties::
 
     >>> pprint(doc.get_source())
-    {'id': u'3', 'name': u'', 'password': None, 'title': u''}
+    {u'id': u'3', u'name': u'', u'password': None, u'title': u''}
 
 
 ES Client property

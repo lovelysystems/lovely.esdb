@@ -5,6 +5,8 @@ Changes for lovely.esdb
 unreleased
 ==========
 
+ - fixed document.get_source for ObjectProperty handling
+
 2016/07/27 0.3.0
 ================
 

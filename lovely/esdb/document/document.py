@@ -1,5 +1,8 @@
 import copy
 import inspect
+import json
+import jsonpickle
+
 from collections import defaultdict
 
 import elasticsearch.exceptions
@@ -173,7 +176,7 @@ class Document(object):
         for name, prop in self._properties():
             if self._values.exists(prop.name):
                 res[name] = self._values.get(prop.name)
-        return res
+        return json.loads(jsonpickle.encode(res, unpicklable=False))
 
     @classmethod
     def get(cls, id):
