@@ -11,6 +11,7 @@ from ..properties import Property
 
 
 DOCUMENTREGISTRY = defaultdict(dict)
+DOCUMENT_CLASSES = {}
 
 
 class DocumentMeta(type):
@@ -31,6 +32,7 @@ class DocumentMeta(type):
                     (name, cls.INDEX_TYPE_NAME)
                 )
             DOCUMENTREGISTRY[cls.INDEX_TYPE_NAME][name] = cls
+            DOCUMENT_CLASSES[cls.__name__] = cls
         # on all Properties set the name to the class property name if no
         # name was provided for the property
         for name, prop in dct.iteritems():
@@ -274,6 +276,10 @@ class Document(object):
         obj._values.source = raw['_source']
         obj._update_meta(raw['_id'], raw.get('_version'))
         return obj
+
+    @staticmethod
+    def resolve_document_name(name):
+        return DOCUMENT_CLASSES[name]
 
     def _store_index(self, **index_kwargs):
         """Write the current object to elasticsearch
