@@ -16,10 +16,12 @@ class Relation(object):
 
     def __init__(self,
                  local,
-                 remote
+                 remote,
+                 doc=u''
                 ):
         self._local, self._local_relation_name = local.split('.', 1)
         self._remote, self._remote_primary = remote.split('.', 1)
+        self.doc = doc
 
     def __get__(self, local, cls=None):
         if local is None:
@@ -37,11 +39,13 @@ class Relation(object):
             if isinstance(remote, self._remote_class):
                 rel[self._local_relation_name] = remote.id
             elif isinstance(remote, dict):
-                rel[self._local_relation_name] = remote.get(
-                                                    self._remote_primary)
+                rel[self._local_relation_name] = remote['id']
             else:
                 rel[self._local_relation_name] = remote
         setattr(local, self._local, rel)
+
+    def get_query_name(self):
+        return self._local_relation_name
 
     def remote_id(self, doc):
         rel = getattr(doc, self._local)
@@ -83,6 +87,13 @@ class RelationResolver(object):
     @property
     def remote(self):
         return self.relation._remote_class
+
+    @property
+    def relation_dict(self):
+        return {
+            'id': self.id,
+            'class': self.remote.__name__
+        }
 
     def __call__(self):
         """Calling the resolver provides the related document

@@ -82,6 +82,9 @@ class Property(object):
         """
         self._setter = setter
 
+    def get_query_name(self):
+        return self.name
+
     def _apply(self, doc):
         """Called before the document is stored or updated
 

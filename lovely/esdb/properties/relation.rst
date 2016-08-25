@@ -14,7 +14,7 @@ Define related documents::
     ...
     ...     id = Property(primary_key=True)
     ...     ref = Property()
-    ...     rel = Relation('ref.id', 'RemoteDoc.id')
+    ...     rel = Relation('ref.rel_to_other', 'RemoteDoc.id')
 
     >>> class RemoteDoc(Document):
     ...
@@ -76,7 +76,7 @@ relation::
 The reference property contains the id::
 
     >>> doc.ref
-    {'id': '1'}
+    {'rel_to_other': '1'}
 
 The resolver can be used to get the references document::
 
@@ -98,23 +98,11 @@ None removes the id property::
     >>> doc.rel() is None
     True
 
-Assign a dict containing the id of the remote document::
-
-    >>> doc.rel = {'id': '2'}
-    >>> doc.ref
-    {'id': '2'}
-
-Additional properties are ignored::
-
-    >>> doc.rel = {'id': '3', 'more': 42}
-    >>> doc.ref
-    {'id': '3'}
-
 Directly assign the id::
 
     >>> doc.rel = '4'
     >>> doc.ref
-    {'id': '4'}
+    {'rel_to_other': '4'}
     >>> doc.rel = None
     >>> doc.ref
     {}
@@ -129,11 +117,30 @@ Changing the relation doesn't affect the additional properties::
 
     >>> doc.rel = '4'
     >>> doc.ref
-    {'relproperty': 'relation data', 'id': '4'}
+    {'relproperty': 'relation data', 'rel_to_other': '4'}
 
     >>> doc.rel = None
     >>> doc.ref
     {'relproperty': 'relation data'}
+
+The RelationResolver provides a dict which represents the relation::
+
+    >>> doc.rel.relation_dict
+    {'id': None, 'class': 'RemoteDoc'}
+    >>> doc.rel = '4'
+    >>> doc.rel.relation_dict
+    {'id': '4', 'class': 'RemoteDoc'}
+
+The dict representation can also be used to set the relation::
+
+    >>> dict_4 = doc.rel.relation_dict
+    >>> doc.rel = {'id': '5'}
+    >>> doc.ref
+    {'relproperty': 'relation data', 'rel_to_other': '5'}
+
+    >>> doc.rel = dict_4
+    >>> doc.ref
+    {'relproperty': 'relation data', 'rel_to_other': '4'}
 
 
 Clean Up
