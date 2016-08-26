@@ -1,5 +1,10 @@
 
 
+class RelationBase(object):
+    """Used as a marker for relation classes
+    """
+
+
 class RelationResolver(object):
     """Resolve relations
 
@@ -61,8 +66,10 @@ class RelationResolver(object):
             self.relation.get_local_data(self.instance))
 
 
-class Relation(object):
+class LocalRelation(RelationBase):
     """A 1:1 relation property type for documents
+
+    The relation stores the remote id in a property of the document.
     """
 
     def __init__(self,
@@ -209,7 +216,7 @@ class ListItemRelationResolver(RelationResolver):
         return self.relation.get_local_data(self.instance)[self.idx]
 
 
-class One2NRelation(Relation):
+class LocalOne2NRelation(LocalRelation):
     """A 1:n relation property type for documents
 
     The relations are stored locally in a list containing the referenced ids.

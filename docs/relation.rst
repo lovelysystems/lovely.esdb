@@ -5,43 +5,40 @@ Relations
 .. contents::
 
 
-One To One Relation
-===================
+1:1 Relation
+============
 
 A simple relation property allows to manage and resolve one to one relations
 between documents.
 
-
-LocalDoc is the document which references another document via the `rel`
-property. The `Relation` needs another property on which the relation stores
-the id of the referenced document.
-
-Here we create the relation with ``Relation('ref.id', 'RemoteDoc.id')``.
-
-The first parameter ``'ref.id'`` defines the local property which will be used
-to store the id of the remote document. The ``.id`` part defines the name of
-the id in the ``ref`` property.
-
-The second parameter defines the remote document with the name of the primary
-key.
-
 ::
 
     >>> from lovely.esdb.document import Document
-    >>> from lovely.esdb.properties import Property, Relation
+    >>> from lovely.esdb.properties import Property, LocalRelation
 
     >>> class LocalDoc(Document):
+    ...     """References RemoteDoc via the rel property.
+    ...     """
     ...
     ...     INDEX = 'localdoc'
     ...
     ...     id = Property(primary_key=True)
     ...
+    ...     # The relation is configured with the name/path to the local
+    ...     # property on which the relation stores its internal data and the
+    ...     # remote Document and property name. The remote property name must
+    ...     # be the primary key of the remote Document.
+    ...     rel = LocalRelation('ref.ref_id', 'RemoteDoc.id')
+    ...
+    ...     # ref is the property which is needed by the relation to store the
+    ...     # local relation data.
     ...     ref = Property()
-    ...     rel = Relation('ref.ref_id', 'RemoteDoc.id')
 
 RemoteDoc is the referenced document. There is nothing special about it::
 
     >>> class RemoteDoc(Document):
+    ...     """Referenced document with only an id
+    ...     """
     ...
     ...     INDEX = 'remotedoc'
     ...     ES = es_client
@@ -84,9 +81,60 @@ The ``ref`` property contains the id of the referenced document::
 
 It is also possible to assign the primary key to the relation property::
 
-    >>> remote = RemoteDoc(id='2')
-    >>> _ = remote.store()
+    >>> remote2 = RemoteDoc(id='2')
+    >>> _ = remote2.store()
 
     >>> local.rel = '2'
     >>> local.rel()
     <RemoteDoc u'2'>
+
+
+1:n Relation
+============
+
+The simple 1:n relation maintains a local list with the ids of the related
+documents.
+
+::
+
+    >>> from lovely.esdb.properties import LocalOne2NRelation
+    >>> class LocalOne2NDoc(Document):
+    ...     """References RemoteDoc via the rel property.
+    ...     """
+    ...
+    ...     INDEX = 'localone2ndoc'
+    ...
+    ...     id = Property(primary_key=True)
+    ...
+    ...     # The relation is configured with the name/path to the local
+    ...     # property on which the relation stores its internal data and the
+    ...     # remote Document and property name. The remote property name must
+    ...     # be the primary key of the remote Document.
+    ...     rel = LocalOne2NRelation('ref.ref_id', 'RemoteDoc.id')
+    ...
+    ...     # ref is the property which is needed by the relation to store the
+    ...     # local relation data.
+    ...     ref = Property()
+
+    >>> local = LocalOne2NDoc()
+
+    >>> local.rel = [remote]
+
+The relation provides a resolver::
+
+    >>> local.rel
+    <ListRelationResolver RemoteDoc(['1'])>
+
+The resolver allows access to the items::
+
+    >>> local.rel[0]
+    <ListItemRelationResolver[0] RemoteDoc[1]>
+
+    >>> local.rel[0]()
+    <RemoteDoc u'1'>
+
+Item assignement::
+
+    >>> local.rel = [remote, '2', {'id': '3'}]
+    >>> local.rel
+    <ListRelationResolver RemoteDoc(['1', '2', '3'])>

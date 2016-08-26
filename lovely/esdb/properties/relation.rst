@@ -9,7 +9,7 @@ Test Preparations
 Define related documents::
 
     >>> from lovely.esdb.document import Document
-    >>> from lovely.esdb.properties import Property, Relation
+    >>> from lovely.esdb.properties import Property, LocalRelation
 
     >>> class LocalDoc(Document):
     ...
@@ -17,7 +17,7 @@ Define related documents::
     ...
     ...     id = Property(primary_key=True)
     ...     ref = Property()
-    ...     rel = Relation('ref.rel_to_other', 'RemoteDoc.id')
+    ...     rel = LocalRelation('ref.rel_to_other', 'RemoteDoc.id')
 
     >>> class RemoteDoc(Document):
     ...
@@ -160,11 +160,11 @@ More Complex Relation References
     ...
     ...     id = Property(primary_key=True)
     ...     a = Property()
-    ...     a_rel = Relation('a', 'RemoteDoc.id')
+    ...     a_rel = LocalRelation('a', 'RemoteDoc.id')
     ...     b = Property()
-    ...     b_rel = Relation('b.ref', 'RemoteDoc.id')
+    ...     b_rel = LocalRelation('b.ref', 'RemoteDoc.id')
     ...     c = Property()
-    ...     c_rel = Relation('c.very.deep.ref', 'RemoteDoc.id')
+    ...     c_rel = LocalRelation('c.very.deep.ref', 'RemoteDoc.id')
 
     >>> doc = ComplexLocalDoc(id=1)
 
@@ -207,14 +207,14 @@ More Complex Relation References
 
 1:n relations are stored as lists::
 
-    >>> from lovely.esdb.properties import One2NRelation
+    >>> from lovely.esdb.properties import LocalOne2NRelation
     >>> class One2NLocalDoc(Document):
     ...
     ...     INDEX = 'one2onelocaldoc'
     ...
     ...     id = Property(primary_key=True)
     ...     a = Property()
-    ...     a_rel = One2NRelation('a', 'RemoteDoc.id')
+    ...     a_rel = LocalOne2NRelation('a', 'RemoteDoc.id')
 
     >>> doc = One2NLocalDoc(id=1)
     >>> doc.a_rel
@@ -253,11 +253,11 @@ More Complex Relation References
     ...
     ...     id = Property(primary_key=True)
     ...     a = Property()
-    ...     a_rel = Relation('a', 'RemoteDoc.id')
+    ...     a_rel = LocalRelation('a', 'RemoteDoc.id')
     ...     b = Property()
-    ...     b_rel = Relation('b.ref', 'RemoteDoc.id')
+    ...     b_rel = LocalRelation('b.ref', 'RemoteDoc.id')
     ...     c = Property()
-    ...     c_rel = Relation('c.very.deep.ref', 'RemoteDoc.id')
+    ...     c_rel = LocalRelation('c.very.deep.ref', 'RemoteDoc.id')
 
     >>> doc = ComplexOn2NLocalDoc(id=1)
     >>> doc.a_rel = [1]

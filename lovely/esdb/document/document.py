@@ -7,7 +7,8 @@ from collections import defaultdict
 
 import elasticsearch.exceptions
 
-from ..properties import Property, Relation
+from ..properties import Property
+from ..properties.relation import RelationBase
 
 
 DOCUMENTREGISTRY = defaultdict(dict)
@@ -432,7 +433,7 @@ class Document(object):
         """yield the relations of the document
         """
         def isRelation(obj):
-            return isinstance(obj, Relation)
+            return isinstance(obj, RelationBase)
         for (name, prop) in inspect.getmembers(self.__class__, isRelation):
             if name not in self.RESERVED_PROPERTIES:
                 yield (name, prop)
