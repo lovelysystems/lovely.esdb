@@ -94,8 +94,10 @@ def test_suite():
         create_suite('document/bulk.rst'),
 
         create_suite('properties/property.rst'),
+        create_suite('properties/relation.rst'),
         create_suite('properties/objectproperty.rst'),
 
         # the documentation
         create_suite('../../docs/usage.rst'),
+        create_suite('../../docs/relation.rst'),
     ))

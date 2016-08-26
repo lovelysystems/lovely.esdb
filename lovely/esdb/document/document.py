@@ -8,9 +8,11 @@ from collections import defaultdict
 import elasticsearch.exceptions
 
 from ..properties import Property
+from ..properties.relation import RelationBase
 
 
 DOCUMENTREGISTRY = defaultdict(dict)
+DOCUMENT_CLASSES = {}
 
 
 class DocumentMeta(type):
@@ -31,6 +33,7 @@ class DocumentMeta(type):
                     (name, cls.INDEX_TYPE_NAME)
                 )
             DOCUMENTREGISTRY[cls.INDEX_TYPE_NAME][name] = cls
+            DOCUMENT_CLASSES[cls.__name__] = cls
         # on all Properties set the name to the class property name if no
         # name was provided for the property
         for name, prop in dct.iteritems():
@@ -201,7 +204,13 @@ class Document(object):
                                   doc_type=cls.DOC_TYPE,
                                   body={'ids': ids},
                                  ).get('docs')
-        return [d['found'] and cls.from_raw_es_data(d) or None for d in docs]
+        result = []
+        for doc in docs:
+            if 'error' in doc or not doc.get('found', False):
+                result.append(None)
+                continue
+            result.append(cls.from_raw_es_data(doc))
+        return result
 
     @classmethod
     def get_by(cls, prop, value, offset=0, size=1):
@@ -214,7 +223,7 @@ class Document(object):
         body = {
             "query": {
                 query_type: {
-                    prop.name: value
+                    prop.get_query_name(): value
                 }
             },
             "size": size,
@@ -274,6 +283,10 @@ class Document(object):
         obj._values.source = raw['_source']
         obj._update_meta(raw['_id'], raw.get('_version'))
         return obj
+
+    @staticmethod
+    def resolve_document_name(name):
+        return DOCUMENT_CLASSES[name]
 
     def _store_index(self, **index_kwargs):
         """Write the current object to elasticsearch
@@ -374,6 +387,9 @@ class Document(object):
         for (name, prop) in self._properties():
             if name in kwargs:
                 setattr(self, name, kwargs[name])
+        for (name, prop) in self._get_relation_properties():
+            if name in kwargs:
+                setattr(self, name, kwargs[name])
 
     def _apply_properties(self):
         """call _apply on all properties
@@ -410,6 +426,15 @@ class Document(object):
         def isProperty(obj):
             return isinstance(obj, Property)
         for (name, prop) in inspect.getmembers(self.__class__, isProperty):
+            if name not in self.RESERVED_PROPERTIES:
+                yield (name, prop)
+
+    def _get_relation_properties(self):
+        """yield the relations of the document
+        """
+        def isRelation(obj):
+            return isinstance(obj, RelationBase)
+        for (name, prop) in inspect.getmembers(self.__class__, isRelation):
             if name not in self.RESERVED_PROPERTIES:
                 yield (name, prop)
 

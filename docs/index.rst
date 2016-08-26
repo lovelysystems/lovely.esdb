@@ -9,3 +9,4 @@ Contents
    :maxdepth: 3
 
    ./usage
+   ./relation
