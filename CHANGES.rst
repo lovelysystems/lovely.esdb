@@ -5,6 +5,9 @@ Changes for lovely.esdb
 unreleased
 ==========
 
+2016/08/26 0.3.2
+================
+
  - added relation properties for 1:1 and 1:n relations
 
 2016/08/10 0.3.1
