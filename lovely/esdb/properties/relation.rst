@@ -153,6 +153,7 @@ The dict representation can also be used to set the relation::
 More Complex Relation References
 ================================
 
+Some special use cases::
 
     >>> class ComplexLocalDoc(Document):
     ...
