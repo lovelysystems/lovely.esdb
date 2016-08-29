@@ -5,6 +5,9 @@ Changes for lovely.esdb
 unreleased
 ==========
 
+2016/08/29 0.3.4
+================
+
  - extended the relation_dict
 
 2016/08/29 0.3.3
