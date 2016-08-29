@@ -5,6 +5,8 @@ Changes for lovely.esdb
 unreleased
 ==========
 
+ - fixed id lookup
+
 2016/08/29 0.3.4
 ================
 

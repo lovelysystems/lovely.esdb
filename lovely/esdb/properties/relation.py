@@ -26,7 +26,10 @@ class RelationResolver(object):
 
     @property
     def id(self):
-        return self.relation.get_local_data(self.instance)
+        data = self.relation.get_local_data(self.instance)
+        if isinstance(data, dict):
+            return data["id"]
+        return data
 
     @property
     def remote(self):
@@ -234,7 +237,10 @@ class ListItemRelationResolver(RelationResolver):
 
     @property
     def id(self):
-        return self.relation.get_local_data(self.instance)[self.idx]
+        data = self.relation.get_local_data(self.instance)[self.idx]
+        if isinstance(data, dict):
+            return data["id"]
+        return data
 
     @property
     def relation_dict(self):
