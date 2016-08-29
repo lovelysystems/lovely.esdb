@@ -34,10 +34,13 @@ class RelationResolver(object):
 
     @property
     def relation_dict(self):
-        return {
-            'id': self.id,
-            'class': self.remote.__name__
-        }
+        data = self.relation.get_local_data(self.instance)
+        if isinstance(data, dict):
+            item = copy.deepcopy(data)
+        else:
+            item = {"id": data}
+        item['class'] = self.remote.__name__
+        return item
 
     def __call__(self):
         """Calling the resolver provides the related document
@@ -185,19 +188,33 @@ class ListRelationResolver(object):
 
     @property
     def relation_dict(self):
-        data = self.relation.get_local_data(self.instance)
-        return [
-            {
-                'id': d,
-                'class': self.remote.__name__
-            }
-            for d in data]
+        return [d.relation_dict for d in self]
 
     def __getitem__(self, idx):
         return ListItemRelationResolver(self.instance,
                                         self.relation,
                                         idx,
                                         self.cache)
+
+    def __iter__(self):
+
+        class ResolverIterator(object):
+
+            def __init__(self, resolver):
+                self.resolver = resolver
+                self.offset = 0
+                self.maxIter = len(
+                    self.resolver.relation.get_local_data(self.resolver.instance))
+
+            def next(self):
+                if self.offset >= self.maxIter:
+                    raise StopIteration
+                self.offset += 1
+                return ListItemRelationResolver(self.resolver.instance,
+                                                self.resolver.relation,
+                                                self.offset - 1,
+                                                self.resolver.cache)
+        return ResolverIterator(self)
 
     def __repr__(self):
         return '<%s %s(%r)>' % (
@@ -218,6 +235,16 @@ class ListItemRelationResolver(RelationResolver):
     @property
     def id(self):
         return self.relation.get_local_data(self.instance)[self.idx]
+
+    @property
+    def relation_dict(self):
+        data = self.relation.get_local_data(self.instance)[self.idx]
+        if isinstance(data, dict):
+            item = copy.deepcopy(data)
+        else:
+            item = {"id": data}
+        item['class'] = self.remote.__name__
+        return item
 
     def __repr__(self):
         return '<%s[%s] %s[%s]>' % (
@@ -292,10 +319,12 @@ class LocalOne2NRelation(LocalRelation):
                  relationProperties=None,
                  doc=u''
                 ):
-        super(LocalOne2NRelation, self).__init__(local, remote, relationProperties, doc)
+        super(LocalOne2NRelation, self).__init__(local,
+                                                 remote,
+                                                 relationProperties,
+                                                 doc)
         self.elementTransformer = self.transformer()
-        self._transformer =RelationNullTransformer(None)
-
+        self._transformer = RelationNullTransformer(None)
 
     def __get__(self, local, cls=None):
         if local is None:

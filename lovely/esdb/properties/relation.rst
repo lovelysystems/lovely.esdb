@@ -171,6 +171,8 @@ Relations can hold additional properties::
     >>> doc.rel = {"id": '1', "p1": "prop1", "n1": "not used"}
     >>> doc.ref
     {'rel_to_other': {'p2': None, 'p1': 'prop1', 'id': '1'}}
+    >>> doc.rel.relation_dict
+    {'p2': None, 'p1': 'prop1', 'id': '1', 'class': 'RemoteDoc'}
     >>> doc.rel()
     <RemoteDoc u'1'>
 
@@ -365,6 +367,9 @@ Relations can hold additional properties::
     >>> doc.ref
     {'list_rel': [{'p2': None, 'p1': None, 'id': '1'}, {'p2': None, 'p1': 'prop1', 'id': '2'}]}
 
+    >>> doc.rel.relation_dict
+    [{'p2': None, 'p1': None, 'id': '1', 'class': 'RemoteDoc'},
+     {'p2': None, 'p1': 'prop1', 'id': '2', 'class': 'RemoteDoc'}]
 
 Clean Up
 ========
