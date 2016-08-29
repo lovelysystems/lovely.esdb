@@ -1,3 +1,4 @@
+import copy
 
 
 class RelationBase(object):
@@ -41,17 +42,18 @@ class RelationResolver(object):
     def __call__(self):
         """Calling the resolver provides the related document
         """
-        remote_id = self._get_local_data()
+        remoteData = self._get_local_data()
+        remoteId = self.relation.transformer().getId(remoteData)
         if (None not in self.cache
-            or self.cache[None].get('for', object) != remote_id
+            or self.cache[None].get('for', object) != remoteId
            ):
-            if remote_id is None:
+            if remoteId is None:
                 doc = None
             else:
                 # get the document from the store
-                doc = self.relation.remote_class.get(remote_id)
+                doc = self.relation.remote_class.get(remoteId)
             self.cache[None] = {
-                'for': remote_id,
+                'for': remoteId,
                 'doc': doc
             }
         return self.cache[None]['doc']
@@ -72,13 +74,17 @@ class LocalRelation(RelationBase):
     The relation stores the remote id in a property of the document.
     """
 
+    _transformer = None
+
     def __init__(self,
                  local,
                  remote,
+                 relationProperties=None,
                  doc=u''
                 ):
         self._local_path = local.split('.')
         self._remote, self._remote_primary = remote.split('.', 1)
+        self.relationProperties = copy.deepcopy(relationProperties)
         self.doc = doc
 
     def __get__(self, local, cls=None):
@@ -90,12 +96,7 @@ class LocalRelation(RelationBase):
         if remote is None:
             self.del_local_data(local)
         else:
-            data = remote
-            if isinstance(remote, self.remote_class):
-                data = remote.id
-            elif isinstance(remote, dict):
-                data = remote['id']
-            self.set_local_data(local, data)
+            self.set_local_data(local, remote)
 
     def get_query_name(self):
         return '.'.join(self._local_path[1:])
@@ -108,11 +109,14 @@ class LocalRelation(RelationBase):
             return rel
         for part in self._local_path[1:-1]:
             if part not in rel:
-                rel[part] = {}
+                rel = {}
+                break
             rel = rel[part]
         return rel.get(self._local_path[-1])
 
     def set_local_data(self, doc, value):
+        current = self.get_local_data(doc)
+        value = self.transformer()(doc, current, value)
         rel = getattr(doc, self._local_path[0])
         if len(self._local_path) == 1:
             # store directly on the document property
@@ -151,6 +155,16 @@ class LocalRelation(RelationBase):
     def remote_class(self):
         from ..document import Document
         return Document.resolve_document_name(self._remote)
+
+    def transformer(self):
+        if self._transformer is None:
+            if self.relationProperties is not None:
+                self.relationProperties["id"] = None
+                self._transformer = RelationDictTransformer(
+                                        self, self.relationProperties)
+            else:
+                self._transformer = RelationIdTransformer(self)
+        return self._transformer
 
 
 class ListRelationResolver(object):
@@ -216,11 +230,72 @@ class ListItemRelationResolver(RelationResolver):
         return self.relation.get_local_data(self.instance)[self.idx]
 
 
+class RelationDataTransformer(object):
+
+    def __init__(self, relation):
+        self.relation = relation
+
+    def getId(self, value):
+        return value
+
+
+class RelationNullTransformer(RelationDataTransformer):
+
+    def __call__(self, doc, current, value):
+        return value
+
+
+class RelationIdTransformer(RelationDataTransformer):
+
+    def __call__(self, doc, current, value):
+        data = value
+        if isinstance(value, self.relation.remote_class):
+            data = value.id
+        elif isinstance(value, dict):
+            data = value['id']
+        return data
+
+
+class RelationDictTransformer(RelationDataTransformer):
+
+    def __init__(self, relation, relationProperties):
+        self.relationProperties = relationProperties
+        super(RelationDictTransformer, self).__init__(relation)
+
+    def getId(self, value):
+        return value.get('id')
+
+    def __call__(self, doc, current, value):
+        data = current
+        if data is None:
+            data = copy.deepcopy(self.relationProperties)
+        if isinstance(value, self.relation.remote_class):
+            data['id'] = value.id
+        elif isinstance(value, dict):
+            for k, default in self.relationProperties.iteritems():
+                if k in value:
+                    data[k] = value[k]
+        else:
+            data['id'] = value
+        return copy.deepcopy(data)
+
+
 class LocalOne2NRelation(LocalRelation):
     """A 1:n relation property type for documents
 
-    The relations are stored locally in a list containing the referenced ids.
+    The relations are stored locally in a list containing the reference data.
     """
+
+    def __init__(self,
+                 local,
+                 remote,
+                 relationProperties=None,
+                 doc=u''
+                ):
+        super(LocalOne2NRelation, self).__init__(local, remote, relationProperties, doc)
+        self.elementTransformer = self.transformer()
+        self._transformer =RelationNullTransformer(None)
+
 
     def __get__(self, local, cls=None):
         if local is None:
@@ -230,10 +305,5 @@ class LocalOne2NRelation(LocalRelation):
     def __set__(self, local, remote):
         data = []
         for doc in remote:
-            if isinstance(doc, self.remote_class):
-                data.append(doc.id)
-            elif isinstance(doc, dict):
-                data.append(doc['id'])
-            else:
-                data.append(doc)
+            data.append(self.elementTransformer(local, None, doc))
         self.set_local_data(local, data)

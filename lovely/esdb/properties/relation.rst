@@ -150,6 +150,50 @@ The dict representation can also be used to set the relation::
     {'relproperty': 'relation data', 'rel_to_other': '4'}
 
 
+1:1 Relation With Properties
+============================
+
+Relations can hold additional properties::
+
+    >>> class LocalPropertiesDoc(Document):
+    ...
+    ...     INDEX = 'localpropertiesdoc'
+    ...
+    ...     id = Property(primary_key=True)
+    ...     ref = Property()
+    ...     rel = LocalRelation(
+    ...         'ref.rel_to_other',
+    ...         'RemoteDoc.id',
+    ...         relationProperties={'p1': None, 'p2': None}
+    ...     )
+
+    >>> doc = LocalPropertiesDoc(id=1)
+    >>> doc.rel = {"id": '1', "p1": "prop1", "n1": "not used"}
+    >>> doc.ref
+    {'rel_to_other': {'p2': None, 'p1': 'prop1', 'id': '1'}}
+    >>> doc.rel()
+    <RemoteDoc u'1'>
+
+    >>> remote2 = RemoteDoc(id='2')
+    >>> _ = remote2.store()
+
+    >>> doc.rel = '2'
+    >>> doc.ref
+    {'rel_to_other': {'p2': None, 'p1': 'prop1', 'id': '2'}}
+    >>> doc.rel()
+    <RemoteDoc u'2'>
+
+    >>> doc.rel = {'p2': 'prop2'}
+    >>> doc.ref
+    {'rel_to_other': {'p2': 'prop2', 'p1': 'prop1', 'id': '2'}}
+
+    >>> doc.rel = remote1
+    >>> doc.ref
+    {'rel_to_other': {'p2': 'prop2', 'p1': 'prop1', 'id': '1'}}
+    >>> doc.rel()
+    <RemoteDoc u'1'>
+
+
 More Complex Relation References
 ================================
 
@@ -166,6 +210,11 @@ Some special use cases::
     ...     b_rel = LocalRelation('b.ref', 'RemoteDoc.id')
     ...     c = Property()
     ...     c_rel = LocalRelation('c.very.deep.ref', 'RemoteDoc.id')
+    ...     d_rel = LocalRelation(
+    ...         'c.very.deep.propref',
+    ...         'RemoteDoc.id',
+    ...         relationProperties={'p1': None, 'p2': None}
+    ...     )
 
     >>> doc = ComplexLocalDoc(id=1)
 
@@ -201,6 +250,17 @@ Some special use cases::
     {'very': {'deep': {}}}
     >>> doc.c_rel() is None
     True
+
+    >>> doc.d_rel = remote1
+    >>> doc.d_rel = {"p1": "prop1", "n1": "not used"}
+    >>> doc.c
+    {'very': {'deep': {'propref': {'p2': None, 'p1': 'prop1', 'id': '1'}}}}
+    >>> doc.d_rel()
+    <RemoteDoc u'1'>
+
+    >>> doc.c_rel = 1
+    >>> doc.c
+    {'very': {'deep': {'ref': 1, 'propref': {'p2': None, 'p1': 'prop1', 'id': '1'}}}}
 
 
 1:n Relation
@@ -272,6 +332,38 @@ Some special use cases::
     >>> doc.c_rel = [1]
     >>> doc.c
     {'very': {'deep': {'ref': [1]}}}
+
+
+1:n Relation With Properties
+============================
+
+Relations can hold additional properties::
+
+    >>> class One2NLocalPropertiesDoc(Document):
+    ...
+    ...     INDEX = 'one2nlocalpropertiesdoc'
+    ...
+    ...     id = Property(primary_key=True)
+    ...     ref = Property()
+    ...     rel = LocalOne2NRelation(
+    ...         'ref.list_rel',
+    ...         'RemoteDoc.id',
+    ...         relationProperties={'p1': None, 'p2': None}
+    ...     )
+
+    >>> doc = One2NLocalPropertiesDoc(id=1)
+
+    >>> doc.rel = [remote1]
+    >>> doc.ref
+    {'list_rel': [{'p2': None, 'p1': None, 'id': '1'}]}
+
+    >>> doc.rel = [remote1, '2']
+    >>> doc.ref
+    {'list_rel': [{'p2': None, 'p1': None, 'id': '1'}, {'p2': None, 'p1': None, 'id': '2'}]}
+
+    >>> doc.rel = [remote1, {'id': '2', 'p1': 'prop1', 'ignored': 42}]
+    >>> doc.ref
+    {'list_rel': [{'p2': None, 'p1': None, 'id': '1'}, {'p2': None, 'p1': 'prop1', 'id': '2'}]}
 
 
 Clean Up
