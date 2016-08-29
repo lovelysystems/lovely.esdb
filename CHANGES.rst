@@ -5,6 +5,9 @@ Changes for lovely.esdb
 unreleased
 ==========
 
+2016/08/29 0.3.3
+================
+
  - allow additional properties on relations
 
 2016/08/26 0.3.2
