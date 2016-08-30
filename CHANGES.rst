@@ -5,6 +5,8 @@ Changes for lovely.esdb
 unreleased
 ==========
 
+ - fixed relation resolver for list items
+
 2016/08/30 0.3.6
 ================
 

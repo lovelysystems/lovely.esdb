@@ -356,6 +356,13 @@ Relations can hold additional properties::
     >>> doc = One2NLocalPropertiesDoc(id=1)
 
     >>> doc.rel = [remote1]
+    >>> doc.rel
+    <ListRelationResolver RemoteDoc([{'p2': None, 'p1': None, 'id': '1'}])>
+    >>> list(doc.rel)
+    [<ListItemRelationResolver[0] RemoteDoc[{'p2': None, 'p1': None, 'id': '1'}]>]
+    >>> [i() for i in doc.rel]
+    [<RemoteDoc u'1'>]
+
     >>> doc.ref
     {'list_rel': [{'p2': None, 'p1': None, 'id': '1'}]}
 

@@ -16,13 +16,15 @@ class RelationResolver(object):
     same instance of the related document.
     """
 
-    def __init__(self, instance, relation, cache=None):
+    def __init__(self, instance, relation, transformer, cache=None):
         self.instance = instance
         self.relation = relation
+        self.transformer = transformer
         if cache is None:
             self.cache = {}
         else:
             self.cache = cache
+        self.cacheKey = None
 
     @property
     def id(self):
@@ -49,20 +51,21 @@ class RelationResolver(object):
         """Calling the resolver provides the related document
         """
         remoteData = self._get_local_data()
-        remoteId = self.relation.transformer().getId(remoteData)
-        if (None not in self.cache
-            or self.cache[None].get('for', object) != remoteId
+        remoteId = self.transformer.getId(remoteData)
+        cacheKey = self.cacheKey
+        if (cacheKey not in self.cache
+            or self.cache[cacheKey].get('for', object) != remoteId
            ):
             if remoteId is None:
                 doc = None
             else:
                 # get the document from the store
                 doc = self.relation.remote_class.get(remoteId)
-            self.cache[None] = {
+            self.cache[cacheKey] = {
                 'for': remoteId,
                 'doc': doc
             }
-        return self.cache[None]['doc']
+        return self.cache[cacheKey]['doc']
 
     def _get_local_data(self):
         return self.relation.get_local_data(self.instance)
@@ -92,17 +95,36 @@ class LocalRelation(RelationBase):
         self._remote, self._remote_primary = remote.split('.', 1)
         self.relationProperties = copy.deepcopy(relationProperties)
         self.doc = doc
+        self._setter = lambda doc, value: value
 
     def __get__(self, local, cls=None):
         if local is None:
             return self
-        return RelationResolver(local, self)
+        return RelationResolver(local, self, self.transformer())
 
     def __set__(self, local, remote):
+        remote = self._setter(local, remote)
         if remote is None:
             self.del_local_data(local)
         else:
             self.set_local_data(local, remote)
+
+    def setter(self, setter):
+        """allows to set a setter function
+
+        When a value is read from a `Property` this is the first method
+        called with the value.
+
+        This can be used as a decorator:
+            class MyDoc(Document):
+                ...
+                a = Relation(...)
+
+                @a.setter
+                def a_setter(self, value):
+                    return value.lower()
+        """
+        self._setter = setter
 
     def get_query_name(self):
         return '.'.join(self._local_path[1:])
@@ -177,9 +199,10 @@ class ListRelationResolver(object):
     """Resolve a list of relations
     """
 
-    def __init__(self, instance, relation, cache=None):
+    def __init__(self, instance, relation, transformer, cache=None):
         self.instance = instance
         self.relation = relation
+        self.transformer = transformer
         if cache is None:
             self.cache = {}
         else:
@@ -197,6 +220,7 @@ class ListRelationResolver(object):
         return ListItemRelationResolver(self.instance,
                                         self.relation,
                                         idx,
+                                        self.transformer,
                                         self.cache)
 
     def __iter__(self):
@@ -207,7 +231,8 @@ class ListRelationResolver(object):
                 self.resolver = resolver
                 self.offset = 0
                 self.maxIter = len(
-                    self.resolver.relation.get_local_data(self.resolver.instance))
+                    self.resolver.relation.get_local_data(
+                                            self.resolver.instance))
 
             def next(self):
                 if self.offset >= self.maxIter:
@@ -216,6 +241,7 @@ class ListRelationResolver(object):
                 return ListItemRelationResolver(self.resolver.instance,
                                                 self.resolver.relation,
                                                 self.offset - 1,
+                                                self.resolver.transformer,
                                                 self.resolver.cache)
         return ResolverIterator(self)
 
@@ -230,10 +256,11 @@ class ListItemRelationResolver(RelationResolver):
     """Resolve an item from a list relation
     """
 
-    def __init__(self, instance, relation, idx, cache=None):
+    def __init__(self, instance, relation, idx, transformer, cache=None):
         super(ListItemRelationResolver, self).__init__(
-                                        instance, relation, cache)
+                                        instance, relation, transformer, cache)
         self.idx = idx
+        self.cacheKey = idx
 
     @property
     def id(self):
@@ -335,9 +362,10 @@ class LocalOne2NRelation(LocalRelation):
     def __get__(self, local, cls=None):
         if local is None:
             return self
-        return ListRelationResolver(local, self)
+        return ListRelationResolver(local, self, self.elementTransformer)
 
     def __set__(self, local, remote):
+        remote = self._setter(local, remote)
         data = []
         for doc in remote:
             data.append(self.elementTransformer(local, None, doc))
