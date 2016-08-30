@@ -5,6 +5,8 @@ Changes for lovely.esdb
 unreleased
 ==========
 
+ - no longer call __init__ if a document is created from elasticsearch data
+
 2016/08/29 0.3.5
 ================
 

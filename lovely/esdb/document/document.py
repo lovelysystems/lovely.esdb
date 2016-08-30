@@ -80,6 +80,9 @@ class Document(object):
                                 self.__class__.__name__))
         if 'update_properties' in kwargs:
             self._update_properties = kwargs.pop('update_properties')
+        self.init(**kwargs)
+
+    def init(self, **kwargs):
         self._values = DocumentValueManager(self)
         self._meta = {}
         self._prepare_values(**kwargs)
@@ -279,7 +282,8 @@ class Document(object):
         """
         class_name = raw.get('_source', {}).get('db_class__')
         klass = DOCUMENTREGISTRY[cls.INDEX_TYPE_NAME].get(class_name, cls)
-        obj = klass()
+        obj = klass.__new__(klass)
+        obj.init()
         obj._values.source = raw['_source']
         obj._update_meta(raw['_id'], raw.get('_version'))
         return obj
