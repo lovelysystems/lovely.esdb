@@ -323,11 +323,13 @@ class RelationDictTransformer(RelationDataTransformer):
         super(RelationDictTransformer, self).__init__(relation)
 
     def getId(self, value):
-        return value.get('id')
+        return (value or {}).get('id')
 
     def __call__(self, doc, current, value):
         data = current
         if data is None:
+            # None or an empty dict will use the default relation properties
+            # as default.
             data = copy.deepcopy(self.relationProperties)
         if isinstance(value, self.relation.remote_class):
             data['id'] = value.id
