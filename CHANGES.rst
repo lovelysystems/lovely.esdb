@@ -5,6 +5,9 @@ Changes for lovely.esdb
 unreleased
 ==========
 
+2016/09/29 0.3.8
+================
+
  - fix access to unitialized relations with relationProperties
 
 2016/08/30 0.3.7
