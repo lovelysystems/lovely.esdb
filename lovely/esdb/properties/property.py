@@ -13,7 +13,7 @@ class Property(object):
                  name=None,
                  default=None,
                  primary_key=False,
-                 doc=u''
+                 doc=''
                 ):
         self.name = name
         self.doc = doc

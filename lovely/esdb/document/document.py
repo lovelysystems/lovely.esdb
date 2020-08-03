@@ -36,7 +36,7 @@ class DocumentMeta(type):
             DOCUMENT_CLASSES[cls.__name__] = cls
         # on all Properties set the name to the class property name if no
         # name was provided for the property
-        for name, prop in dct.iteritems():
+        for name, prop in dct.items():
             if isinstance(prop, Property) and prop.name is None:
                 prop.name = name
                 if prop.primary_key:
@@ -48,14 +48,12 @@ class DocumentMeta(type):
         super(DocumentMeta, cls).__init__(name, bases, dct)
 
 
-class Document(object):
+class Document(object, metaclass=DocumentMeta):
     """Representation of an elasticsearch document as python object
 
     A simple document class to provide ORM style access for elasticsearch
     index data.
     """
-
-    __metaclass__ = DocumentMeta
 
     ES = None
 
@@ -534,7 +532,7 @@ class DocumentValueManager(object):
         if stripped:
             def strip(obj):
                 if isinstance(obj, dict):
-                    for k, v in list(obj.iteritems()):
+                    for k, v in list(obj.items()):
                         if k.endswith('__'):
                             del obj[k]
                         else:

@@ -3,9 +3,12 @@ import os
 from setuptools import setup, find_packages
 
 
-VERSION = "?"
-execfile(os.path.join(os.path.dirname(__file__),
-                      'lovely/esdb/__init__.py'))
+def get_version():
+    import os
+    p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "VERSION.txt")
+    with open(p) as f:
+        return f.read().strip()
+
 
 
 requires = [
@@ -17,7 +20,7 @@ requires = [
 
 setup(
     name='lovely.esdb',
-    version=VERSION,
+    version=get_version(),
     description="a simple elasticsearch document mapper",
     author='lovelysystems',
     author_email='office@lovelysystems.com',

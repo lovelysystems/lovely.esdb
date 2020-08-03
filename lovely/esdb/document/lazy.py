@@ -40,7 +40,7 @@ class LazyDocument(object):
         object.__setattr__(self, "_doc_ref", doc)
         if doc is not None:
             props = object.__getattribute__(self, "_doc_properties")
-            for k, v in props.iteritems():
+            for k, v in props.items():
                 setattr(doc, k, v)
         return doc
 
@@ -76,7 +76,7 @@ class LazyDocument(object):
         return object.__getattribute__(self,
                                        "_doc_resolver")().__getitem__(index)
 
-    def __nonzero__(self):
+    def __bool__(self):
         return bool(object.__getattribute__(self, "_doc_resolver")())
 
     def __str__(self):

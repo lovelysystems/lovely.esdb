@@ -89,7 +89,7 @@ class LocalRelation(RelationBase):
                  local,
                  remote,
                  relationProperties=None,
-                 doc=u''
+                 doc=''
                 ):
         self._local_path = local.split('.')
         self._remote, self._remote_primary = remote.split('.', 1)
@@ -234,7 +234,7 @@ class ListRelationResolver(object):
                     self.resolver.relation.get_local_data(
                                             self.resolver.instance))
 
-            def next(self):
+            def __next__(self):
                 if self.offset >= self.maxIter:
                     raise StopIteration
                 self.offset += 1
@@ -334,7 +334,7 @@ class RelationDictTransformer(RelationDataTransformer):
         if isinstance(value, self.relation.remote_class):
             data['id'] = value.id
         elif isinstance(value, dict):
-            for k, default in self.relationProperties.iteritems():
+            for k, default in self.relationProperties.items():
                 if k in value:
                     data[k] = value[k]
         else:
@@ -352,7 +352,7 @@ class LocalOne2NRelation(LocalRelation):
                  local,
                  remote,
                  relationProperties=None,
-                 doc=u''
+                 doc=''
                 ):
         super(LocalOne2NRelation, self).__init__(local,
                                                  remote,
